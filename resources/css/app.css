@@ -1,0 +1,79 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+@theme {
+    /* Typography */
+    --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: 'DM Mono', ui-monospace, 'Cascadia Code', monospace;
+
+    /* Canvas — warm charcoal, not pure black */
+    --color-canvas:         #0B0D0E;
+    --color-surface:        #121518;
+    --color-surface-raised: #171B1F;
+    --color-surface-hover:  #1E2329;
+    --color-overlay:        #252B33;
+
+    /* Borders — subtle, not heavy */
+    --color-border:         #262B31;
+    --color-border-strong:  #363D47;
+
+    /* Text */
+    --color-ink:            #F3F4F6;
+    --color-ink-muted:      #9098A3;
+    --color-ink-subtle:     #4A5260;
+
+    /* Accent — muted sage-lime, restrained */
+    --color-accent:         #A3B86C;
+    --color-accent-hover:   #8FA558;
+    --color-accent-dim:     #161C0D;
+    --color-accent-text:    #C8D99A;
+
+    /* Semantic */
+    --color-success:        #4ADE80;
+    --color-success-dim:    #0C2016;
+    --color-warning:        #FBBF24;
+    --color-warning-dim:    #231A06;
+    --color-danger:         #F87171;
+    --color-danger-dim:     #220E0E;
+    --color-info:           #60A5FA;
+    --color-info-dim:       #0A1829;
+}
+
+/* Base */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+html {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Focus ring — accent lime */
+:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-border-strong); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-ink-subtle); }
+
+/* Form controls */
+input[type="range"]     { accent-color: var(--color-accent); }
+input[type="checkbox"],
+input[type="radio"]     { accent-color: var(--color-accent); }
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}
