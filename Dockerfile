@@ -53,7 +53,11 @@ COPY --from=vendor /app/vendor ./vendor
 
 RUN npm run build \
   && composer dump-autoload --optimize \
-  && rm -rf node_modules
+  && rm -rf node_modules \
+  && mkdir -p resources/fonts \
+  && wget -q "https://fonts.gstatic.com/s/poppins/v21/pxiEyp8kv8JHgFVrJJfecg.woff2" -O /tmp/poppins.woff2 || true \
+  && wget -q "https://github.com/google/fonts/raw/main/ofl/poppins/Poppins-Regular.ttf" -O resources/fonts/Poppins-Regular.ttf \
+  && wget -q "https://github.com/google/fonts/raw/main/ofl/poppins/Poppins-Bold.ttf" -O resources/fonts/Poppins-Bold.ttf
 
 FROM php:8.3-cli-alpine AS production
 

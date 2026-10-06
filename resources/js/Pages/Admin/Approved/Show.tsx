@@ -145,6 +145,8 @@ export default function ApprovedShow({
     const [designId, setDesignId]         = useState<string>('');
     const [showLogo, setShowLogo]         = useState(cls.settings?.default_render?.show_logo ?? true);
     const [showWebsite, setShowWebsite]   = useState(cls.settings?.default_render?.show_website_url ?? true);
+    const [textMainColor, setTextMainColor] = useState('#F0EEE6');
+    const [textAccentColor, setTextAccentColor] = useState('');  // empty = use preset default
 
     const [previewSrc, setPreviewSrc]         = useState<string | null>(null);
     const [previewing, setPreviewing]         = useState(false);
@@ -274,14 +276,14 @@ export default function ApprovedShow({
                 <Alert variant="error" className="mb-5">Konten ini telah diturunkan. Pembuatan gambar baru tidak dapat dilakukan.</Alert>
             )}
 
-            <div className="grid gap-8 lg:grid-cols-[360px_1fr]">
+            <div className="grid gap-8 lg:grid-cols-[360px_1fr] items-start">
                 {/* ── Left: Controls ──────────────────────────────────── */}
                 <div className="space-y-0">
 
                     {/* Metadata preview — informational */}
                     <div>
                         <SectionTitle>Konten</SectionTitle>
-                        <p className="text-sm text-[var(--color-ink)] whitespace-pre-wrap leading-relaxed">
+                        <p className="text-sm text-[var(--color-ink)] whitespace-pre-wrap leading-relaxed break-words">
                             {submission.moderated_message ?? submission.original_message}
                         </p>
                         {(submission.target_text || submission.alias_text) && (
@@ -303,13 +305,18 @@ export default function ApprovedShow({
                         {(submission.song_text || submission.artist_text) && (
                             <p className="mt-2 text-xs text-[var(--color-ink-subtle)]">
                                 🎵 {[submission.song_text, submission.artist_text].filter(Boolean).join(' — ')}
+                                {submission.song_start_seconds != null && (
+                                    <span className="ml-1 font-mono">
+                                        ({Math.floor(submission.song_start_seconds / 60)}:{String(submission.song_start_seconds % 60).padStart(2,'0')} — {Math.floor((submission.song_start_seconds + 30) / 60)}:{String((submission.song_start_seconds + 30) % 60).padStart(2,'0')})
+                                    </span>
+                                )}
                             </p>
                         )}
                         {(submission.tags ?? []).length > 0 && (
                             <div className="mt-2 flex flex-wrap gap-1">
                                 {submission.tags!.map(t => (
                                     <span key={t.id} className="px-2 py-0.5 rounded-full text-[10px] bg-[var(--color-surface-raised)] text-[var(--color-ink-subtle)] border border-[var(--color-border)]">
-                                        #{t.name}
+                                        {t.name}
                                     </span>
                                 ))}
                             </div>
@@ -373,19 +380,15 @@ export default function ApprovedShow({
 
                         {/* Colorway */}
                         <div className="pt-5 mt-5 border-t border-[var(--color-border)]">
-                            <SectionTitle>Warna &amp; Background</SectionTitle>
+                            <SectionTitle>Warna</SectionTitle>
 
                             {/* Custom designs */}
                             {designs.length > 0 && (
                                 <div className="mb-4">
                                     <p className="text-[10px] text-[var(--color-ink-subtle)] uppercase tracking-wide mb-2">Background Kustom</p>
                                     <div className="grid grid-cols-4 gap-2">
-                                        <button
-                                            onClick={() => setDesignId('')}
-                                            className={`flex flex-col items-center gap-1 group`}
-                                            title="Pakai preset bawaan"
-                                        >
-                                            <div className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center transition-all bg-[var(--color-surface-raised)] ${!designId ? 'border-[var(--color-accent)]' : 'border-transparent group-hover:border-[var(--color-border-strong)]'}`}>
+                                        <button onClick={() => setDesignId('')} title="Pakai preset bawaan" className="flex flex-col items-center gap-1 group">
+                                            <div className={`w-10 h-10 rounded-[8px] border-2 flex items-center justify-center transition-all bg-[var(--color-surface-raised)] ${!designId ? 'border-[var(--color-accent)]' : 'border-transparent group-hover:border-[var(--color-border-strong)]'}`}>
                                                 <span className="text-[8px] text-[var(--color-ink-subtle)]">Bawaan</span>
                                             </div>
                                         </button>
@@ -393,7 +396,7 @@ export default function ApprovedShow({
                                             const sel = designId === d.id;
                                             return (
                                                 <button key={d.id} onClick={() => setDesignId(d.id)} className="flex flex-col items-center gap-1 group">
-                                                    <div className={`w-10 h-10 rounded-lg bg-[var(--color-surface-raised)] border-2 flex items-center justify-center transition-all ${sel ? 'border-[var(--color-accent)] ring-2 ring-[var(--color-accent)] ring-offset-1 ring-offset-[var(--color-canvas)]' : 'border-[var(--color-border)] group-hover:border-[var(--color-border-strong)]'}`}>
+                                                    <div className={`w-10 h-10 rounded-[8px] bg-[var(--color-surface-raised)] border-2 flex items-center justify-center transition-all ${sel ? 'border-[var(--color-accent)]' : 'border-[var(--color-border)] group-hover:border-[var(--color-border-strong)]'}`}>
                                                         <span className="text-[7px] text-[var(--color-ink-subtle)] uppercase">{d.format === 'story' ? 'S' : 'F'}</span>
                                                     </div>
                                                     <span className="text-[9px] text-[var(--color-ink-subtle)] text-center w-full truncate">{d.name}</span>
@@ -404,38 +407,56 @@ export default function ApprovedShow({
                                 </div>
                             )}
 
-                            {/* Background color */}
                             {!designId && (
-                                <>
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <label className="text-xs text-[var(--color-ink-muted)] w-24 shrink-0">Warna BG</label>
+                                <div className="space-y-3">
+                                    {/* Background color */}
+                                    <div className="flex items-center gap-3">
+                                        <label className="text-xs text-[var(--color-ink-muted)] w-28 shrink-0">Warna Background</label>
                                         <div className="flex items-center gap-2">
-                                            <input
-                                                type="color"
-                                                value={bgColor}
-                                                onChange={e => setBgColor(e.target.value)}
-                                                className="h-8 w-8 rounded cursor-pointer border border-[var(--color-border)] bg-transparent p-0.5"
-                                            />
-                                            <input
-                                                type="text"
-                                                value={bgColor}
+                                            <input type="color" value={bgColor} onChange={e => setBgColor(e.target.value)}
+                                                className="h-7 w-7 rounded cursor-pointer border border-[var(--color-border)] bg-transparent p-0.5" />
+                                            <input type="text" value={bgColor}
                                                 onChange={e => /^#[0-9A-Fa-f]{0,6}$/.test(e.target.value) && setBgColor(e.target.value)}
-                                                className="w-24 text-xs font-mono px-2 py-1 rounded border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-ink)]"
-                                                maxLength={7}
-                                            />
+                                                className="w-20 text-xs font-mono px-2 py-1 rounded-[6px] border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-ink)]" maxLength={7} />
+                                        </div>
+                                    </div>
+
+                                    {/* Text main color */}
+                                    <div className="flex items-center gap-3">
+                                        <label className="text-xs text-[var(--color-ink-muted)] w-28 shrink-0">Warna Teks Utama</label>
+                                        <div className="flex items-center gap-2">
+                                            <input type="color" value={textMainColor} onChange={e => setTextMainColor(e.target.value)}
+                                                className="h-7 w-7 rounded cursor-pointer border border-[var(--color-border)] bg-transparent p-0.5" />
+                                            <input type="text" value={textMainColor}
+                                                onChange={e => /^#[0-9A-Fa-f]{0,6}$/.test(e.target.value) && setTextMainColor(e.target.value)}
+                                                className="w-20 text-xs font-mono px-2 py-1 rounded-[6px] border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-ink)]" maxLength={7} />
+                                        </div>
+                                    </div>
+
+                                    {/* Accent / header color */}
+                                    <div className="flex items-center gap-3">
+                                        <label className="text-xs text-[var(--color-ink-muted)] w-28 shrink-0">Warna Header / Aksen</label>
+                                        <div className="flex items-center gap-2">
+                                            <input type="color" value={textAccentColor || '#5878FF'} onChange={e => setTextAccentColor(e.target.value)}
+                                                className="h-7 w-7 rounded cursor-pointer border border-[var(--color-border)] bg-transparent p-0.5" />
+                                            <input type="text" value={textAccentColor}
+                                                onChange={e => /^#[0-9A-Fa-f]{0,6}$/.test(e.target.value) && setTextAccentColor(e.target.value)}
+                                                placeholder="Preset default"
+                                                className="w-20 text-xs font-mono px-2 py-1 rounded-[6px] border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-ink)]" maxLength={7} />
+                                            {textAccentColor && (
+                                                <button type="button" onClick={() => setTextAccentColor('')}
+                                                    className="text-[10px] text-[var(--color-ink-subtle)] hover:text-[var(--color-danger)]">Reset</button>
+                                            )}
                                         </div>
                                     </div>
 
                                     {/* Pattern */}
-                                    <div className="flex items-start gap-3 mb-3">
-                                        <label className="text-xs text-[var(--color-ink-muted)] w-24 shrink-0 mt-1">Pattern</label>
+                                    <div className="flex items-start gap-3">
+                                        <label className="text-xs text-[var(--color-ink-muted)] w-28 shrink-0 mt-1">Pattern</label>
                                         <div className="flex flex-wrap gap-1.5">
                                             {PATTERNS.map(pt => (
-                                                <button
-                                                    key={pt.key}
-                                                    onClick={() => setPatternKey(pt.key)}
-                                                    className={`px-2 py-0.5 rounded text-[10px] border transition-colors ${patternKey === pt.key ? 'bg-[var(--color-accent)] text-[#0B0D0E] border-[var(--color-accent)]' : 'bg-transparent text-[var(--color-ink-muted)] border-[var(--color-border)] hover:border-[var(--color-border-strong)]'}`}
-                                                >
+                                                <button key={pt.key} onClick={() => setPatternKey(pt.key)}
+                                                    className={`px-2 py-0.5 rounded text-[10px] border transition-colors ${patternKey === pt.key ? 'bg-[var(--color-accent)] text-[#0B0D0E] border-[var(--color-accent)]' : 'bg-transparent text-[var(--color-ink-muted)] border-[var(--color-border)] hover:border-[var(--color-border-strong)]'}`}>
                                                     {pt.label}
                                                 </button>
                                             ))}
@@ -444,20 +465,16 @@ export default function ApprovedShow({
 
                                     {patternKey && (
                                         <div className="flex items-center gap-3">
-                                            <label className="text-xs text-[var(--color-ink-muted)] w-24 shrink-0">Opasitas</label>
+                                            <label className="text-xs text-[var(--color-ink-muted)] w-28 shrink-0">Opasitas Pattern</label>
                                             <div className="flex items-center gap-2 flex-1">
-                                                <input
-                                                    type="range"
-                                                    min={0} max={0.5} step={0.02}
-                                                    value={patternOpacity}
+                                                <input type="range" min={0} max={0.5} step={0.02} value={patternOpacity}
                                                     onChange={e => setPatternOpacity(parseFloat(e.target.value))}
-                                                    className="flex-1 accent-[var(--color-accent)]"
-                                                />
+                                                    className="flex-1 accent-[var(--color-accent)]" />
                                                 <span className="text-xs text-[var(--color-ink-subtle)] w-8 text-right">{Math.round(patternOpacity * 100)}%</span>
                                             </div>
                                         </div>
                                     )}
-                                </>
+                                </div>
                             )}
                         </div>
 
@@ -527,20 +544,22 @@ export default function ApprovedShow({
                     </div>
                 </div>
 
-                {/* ── Right: Preview ────────────────────────────────── */}
+                {/* ── Right: Preview — half-width, aspect-correct, no float ── */}
                 <div className="lg:sticky lg:top-6 lg:self-start">
-                    <div
-                        className="rounded-xl border border-[var(--color-border)] min-h-[420px] flex items-center justify-center overflow-hidden"
-                        style={{ backgroundColor: 'var(--color-canvas)' }}
-                    >
+                    <div className="rounded-xl border border-[var(--color-border)] overflow-hidden"
+                        style={{ backgroundColor: 'var(--color-canvas)', maxWidth: '270px', margin: '0 auto' }}>
                         {previewing ? (
-                            <Spinner size={32} className="text-[var(--color-ink-muted)]" />
+                            <div className="min-h-[180px] flex items-center justify-center">
+                                <Spinner size={24} className="text-[var(--color-ink-muted)]" />
+                            </div>
                         ) : previewSrc ? (
-                            <img src={previewSrc} alt="Preview" className="max-h-[640px] w-full object-contain" />
+                            <img src={previewSrc} alt="Preview" className="w-full h-auto block" />
                         ) : (
-                            <span className="text-sm text-[var(--color-ink-subtle)] px-6 text-center">
-                                Preview akan muncul otomatis
-                            </span>
+                            <div className="min-h-[180px] flex items-center justify-center">
+                                <span className="text-xs text-[var(--color-ink-subtle)] px-4 text-center">
+                                    Preview akan muncul otomatis
+                                </span>
+                            </div>
                         )}
                     </div>
                 </div>

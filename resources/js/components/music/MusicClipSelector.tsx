@@ -86,6 +86,11 @@ export default function MusicClipSelector({ track, initialStartMs = 0, onConfirm
         cueVideo(committedMs / 1000, (committedMs + clipDurationMs) / 1000);
     }, [committedMs, isYT, clipDurationMs, cueVideo]);
 
+    // showWarmHint: shown when user clicks preview while player not ready
+    const [showWarmHint, setShowWarmHint] = useState(false);
+    const warmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const hasDragged   = useRef(false);
+
     // Drag refs
     const trackBarRef  = useRef<HTMLDivElement>(null);
     const dragStartX   = useRef<number | null>(null);
@@ -113,12 +118,21 @@ export default function MusicClipSelector({ track, initialStartMs = 0, onConfirm
 
     function onPointerUp(e: React.PointerEvent) {
         if (!isDragging.current) return;
-        isDragging.current  = false;
-        dragStartX.current  = null;
-        setCommittedMs(startMs); // triggers cue/warmup
+        isDragging.current = false;
+        dragStartX.current = null;
+        hasDragged.current = true;
+        setCommittedMs(startMs);
     }
 
+    const [cooldown, setCooldown] = useState(false);
+    const cooldownRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
     function handlePlay() {
+        if (cooldown) return;
+        setCooldown(true);
+        if (cooldownRef.current) clearTimeout(cooldownRef.current);
+        cooldownRef.current = setTimeout(() => setCooldown(false), 2000);
+
         if (isYT) {
             if (ytState === 'playing') {
                 pauseVideo();
@@ -170,9 +184,12 @@ export default function MusicClipSelector({ track, initialStartMs = 0, onConfirm
     const waveBars = generateWaveBars(BARS, track.trackId + track.title);
 
     const isPlaying = isYT ? ytState === 'playing' : audioPreviewing;
-    const canPlay   = isYT ? (ytState !== 'idle' && ytState !== 'error') : !!streamUrl;
+    // warmingUp: YT player not yet cued/ready; for audio always ready if URL exists
+    const warmingUp = isYT ? (ytState === 'idle') : false;
+    const canPlay   = isYT ? !!videoId : !!streamUrl;
 
     return (
+        <>
         <div className="flex flex-col gap-4 p-5">
             {/* Track header */}
             <div className="flex items-center gap-3">
@@ -274,18 +291,40 @@ export default function MusicClipSelector({ track, initialStartMs = 0, onConfirm
                     ← Kembali
                 </button>
 
-                <button
-                    type="button"
-                    onClick={handlePlay}
-                    disabled={!canPlay}
-                    className="flex items-center gap-1.5 px-4 py-2 text-sm rounded-[8px] border border-[var(--color-border)] text-[var(--color-ink-muted)] hover:text-[var(--color-accent)] hover:border-[var(--color-accent)] transition-colors disabled:opacity-40"
-                    aria-label={isPlaying ? 'Pause' : 'Preview klip'}
-                >
-                    {isPlaying
-                        ? <><svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><rect x="1" y="1" width="3" height="8"/><rect x="6" y="1" width="3" height="8"/></svg> Pause</>
-                        : <><svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M2 1l7 4-7 4z"/></svg> Preview</>
-                    }
-                </button>
+                <div className="relative">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            if (warmingUp) { setShowWarmHint(true); setTimeout(() => setShowWarmHint(false), 2000); return; }
+                            handlePlay();
+                        }}
+                        className={`flex items-center gap-1.5 px-4 py-2 text-sm rounded-[8px] border transition-colors ${
+                            warmingUp || !canPlay || cooldown
+                                ? 'border-[var(--color-border)] text-[var(--color-ink-subtle)] cursor-not-allowed'
+                                : 'border-[var(--color-border)] text-[var(--color-ink-muted)] hover:text-[var(--color-accent)] hover:border-[var(--color-accent)]'
+                        }`}
+                        aria-label={warmingUp ? 'Menyiapkan preview' : isPlaying ? 'Pause' : 'Preview klip'}
+                    >
+                        {warmingUp ? (
+                            <span className="flex items-end gap-[2px] h-3">
+                                {[0,1,2].map(i => (
+                                    <span key={i} className="w-1 rounded-full bg-current"
+                                        style={{ height: '60%', animation: `bounce 0.9s ease-in-out ${i * 0.18}s infinite alternate` }} />
+                                ))}
+                            </span>
+                        ) : isPlaying ? (
+                            <><svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><rect x="1" y="1" width="3" height="8"/><rect x="6" y="1" width="3" height="8"/></svg> Pause</>
+                        ) : (
+                            <><svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M2 1l7 4-7 4z"/></svg> Preview</>
+                        )}
+                    </button>
+
+                    {showWarmHint && (
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 rounded-[6px] bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-[10px] text-[var(--color-ink-muted)] whitespace-nowrap pointer-events-none">
+                            Menyiapkan preview
+                        </div>
+                    )}
+                </div>
 
                 <button type="button" onClick={handleConfirm}
                     className="ml-auto px-5 py-2 text-sm rounded-[8px] bg-[var(--color-accent)] text-[#0B0D0E] font-semibold hover:opacity-90 transition-opacity">
@@ -293,5 +332,7 @@ export default function MusicClipSelector({ track, initialStartMs = 0, onConfirm
                 </button>
             </div>
         </div>
+        <style>{`@keyframes bounce { from { transform: scaleY(0.4); } to { transform: scaleY(1); } }`}</style>
+        </>
     );
 }

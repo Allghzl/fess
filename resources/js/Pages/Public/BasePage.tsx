@@ -36,6 +36,8 @@ export default function BasePage({ base, tags = [], auth_user, errors }: Props) 
     const [selectedMusic, setSelectedMusic] = useState<SelectedMusic | null>(null);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [loading, setLoading]           = useState(false);
+    const [note, setNote]                 = useState('');
+    const [showNote, setShowNote]         = useState(false);
     const MAX = 2000;
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -51,9 +53,10 @@ export default function BasePage({ base, tags = [], auth_user, errors }: Props) 
 
         router.post(`/b/${base.slug}/submit`, {
             message,
-            target_text: targetText || undefined,
-            alias_text:  aliasText  || undefined,
-            tag_ids:     tagIds.length ? tagIds : undefined,
+            target_text:   targetText || undefined,
+            alias_text:    aliasText  || undefined,
+            tag_ids:       tagIds.length ? tagIds : undefined,
+            internal_note: note.trim() || undefined,
             ...musicPayload,
             consent: true,
         }, {
@@ -62,7 +65,11 @@ export default function BasePage({ base, tags = [], auth_user, errors }: Props) 
     };
 
     return (
-        <PublicShell title={base.name} subtitle={base.instagram_handle ?? undefined} footer={false}>
+        <PublicShell
+            title="Kirim Menfess"
+            subtitle={<>ke <span className="capitalize">{base.name}</span></>}
+            footer={false}
+        >
             {!auth_user ? (
                 <div className="space-y-4">
                     <Button
@@ -130,6 +137,31 @@ export default function BasePage({ base, tags = [], auth_user, errors }: Props) 
 
                     {/* Music picker */}
                     <MusicField value={selectedMusic} onChange={setSelectedMusic} />
+
+                    {/* Catatan untuk admin */}
+                    <div>
+                        <button
+                            type="button"
+                            onClick={() => setShowNote(v => !v)}
+                            className="text-xs text-[var(--color-ink-subtle)] hover:text-[var(--color-ink-muted)] transition-colors"
+                        >
+                            {showNote ? '− Sembunyikan catatan' : '+ Tambahkan catatan untuk admin'}
+                        </button>
+                        {showNote && (
+                            <div className="mt-2">
+                                <textarea
+                                    value={note}
+                                    onChange={e => setNote(e.target.value.slice(0, 200))}
+                                    placeholder="Catatan opsional untuk admin, tidak ditampilkan di postingan…"
+                                    rows={2}
+                                    className="w-full rounded-[8px] border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-ink)] text-sm px-3 py-2 focus:outline-none focus:border-[var(--color-accent)] placeholder:text-[var(--color-ink-subtle)] resize-none"
+                                />
+                                <p className={`text-right text-[10px] mt-0.5 ${note.length > 180 ? 'text-[var(--color-warning)]' : 'text-[var(--color-ink-subtle)]'}`}>
+                                    {note.length}/200
+                                </p>
+                            </div>
+                        )}
+                    </div>
 
                     <Button type="submit" variant="primary" size="lg" loading={loading} disabled={!message.trim()} className="w-full">
                         {loading ? 'Mengirim...' : 'Kirim Menfess'}

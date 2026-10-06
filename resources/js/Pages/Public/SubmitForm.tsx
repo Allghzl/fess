@@ -40,6 +40,8 @@ type FormData = {
     song_text: string;
     artist_text: string;
     song_start_seconds: number | undefined;
+    internal_note: string;
+    show_note: boolean;
 };
 
 export default function SubmitForm({ base, tags = [] }: Props) {
@@ -51,6 +53,8 @@ export default function SubmitForm({ base, tags = [] }: Props) {
         tag_ids:           [],
         consent:           false,
         honeypot:          '',
+        internal_note:     '',
+        show_note:         false,
         music_provider:    '',
         music_track_id:    '',
         music_start_ms:    undefined,
@@ -111,11 +115,11 @@ export default function SubmitForm({ base, tags = [] }: Props) {
         <div className="min-h-screen bg-[var(--color-canvas)] flex flex-col items-center justify-start px-4 py-10">
             <div className="w-full max-w-md">
                 <Link href={`/b/${base.slug}`} className="inline-flex items-center text-sm text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] mb-8 transition-colors">
-                    ← {base.name}
+                    ← <span className="capitalize">{base.name}</span>
                 </Link>
 
                 <h1 className="text-xl font-semibold text-[var(--color-ink)] mb-1">Kirim Pesan Anonim</h1>
-                <p className="text-sm text-[var(--color-ink-subtle)] mb-8">ke {base.name}</p>
+                <p className="text-sm text-[var(--color-ink-subtle)] mb-8">ke <span className="capitalize">{base.name}</span></p>
 
                 <div className="mb-6 space-y-0.5 text-xs text-[var(--color-ink-subtle)]">
                     <p>Login digunakan untuk keamanan dan mencegah spam.</p>
@@ -167,6 +171,28 @@ export default function SubmitForm({ base, tags = [] }: Props) {
 
                     {/* Music picker */}
                     <MusicField value={selectedMusic} onChange={handleMusicChange} />
+
+                    {/* Catatan untuk admin */}
+                    <div>
+                        <button type="button" onClick={() => setData('show_note' as never, !data.show_note as never)}
+                            className="text-xs text-[var(--color-ink-subtle)] hover:text-[var(--color-ink-muted)] transition-colors">
+                            {data.show_note ? '− Sembunyikan catatan' : '+ Tambahkan catatan untuk admin'}
+                        </button>
+                        {data.show_note && (
+                            <div className="mt-2">
+                                <textarea
+                                    value={data.internal_note}
+                                    onChange={e => setData('internal_note', e.target.value.slice(0, 200))}
+                                    placeholder="Catatan opsional untuk admin, tidak ditampilkan di postingan…"
+                                    rows={2}
+                                    className="w-full rounded-[8px] border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-ink)] text-sm px-3 py-2 focus:outline-none focus:border-[var(--color-accent)] placeholder:text-[var(--color-ink-subtle)] resize-none"
+                                />
+                                <p className={`text-right text-[10px] mt-0.5 ${data.internal_note.length > 180 ? 'text-[var(--color-warning)]' : 'text-[var(--color-ink-subtle)]'}`}>
+                                    {data.internal_note.length}/200
+                                </p>
+                            </div>
+                        )}
+                    </div>
 
                     {/* Consent */}
                     <div className="flex items-start gap-3">

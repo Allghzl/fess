@@ -27,7 +27,9 @@ class BasePageController extends Controller
     {
         $class = ClassWorkspace::where('slug', $slug)
             ->where('is_active', true)
-            ->firstOrFail();
+            ->first();
+
+        if (!$class) return redirect('/');
 
         return Inertia::render('Public/BasePage', [
             'base' => [
@@ -57,7 +59,9 @@ class BasePageController extends Controller
     {
         $class = ClassWorkspace::where('slug', $slug)
             ->where('is_active', true)
-            ->firstOrFail();
+            ->first();
+
+        if (!$class) return redirect('/');
 
         if (!Auth::check()) {
             $returnTo = '/b/' . $slug . '/submit';
@@ -90,7 +94,9 @@ class BasePageController extends Controller
     {
         $class = ClassWorkspace::where('slug', $slug)
             ->where('is_active', true)
-            ->firstOrFail();
+            ->first();
+
+        if (!$class) return redirect('/');
 
         if (!Auth::check()) {
             return response()->json(['error' => 'Unauthenticated'], 401);
@@ -110,6 +116,7 @@ class BasePageController extends Controller
             'music_duration_ms' => 'nullable|integer|min:1000|max:30000',
             'tag_ids'            => 'nullable|array|max:3',
             'tag_ids.*'   => 'string|uuid',
+            'internal_note' => 'nullable|string|max:200',
             'honeypot'    => 'prohibited',
             'consent'     => 'accepted',
         ]);
@@ -153,6 +160,7 @@ class BasePageController extends Controller
             'music_track_id'    => $data['music_track_id']    ?? null,
             'music_start_ms'    => $data['music_start_ms']    ?? null,
             'music_duration_ms' => $data['music_duration_ms'] ?? null,
+            'internal_note'     => $data['internal_note']     ?? null,
             'status'             => SubmissionStatus::Submitted->value,
         ]);
 
@@ -165,7 +173,8 @@ class BasePageController extends Controller
 
     public function success(string $slug)
     {
-        $class = ClassWorkspace::where('slug', $slug)->firstOrFail();
+        $class = ClassWorkspace::where('slug', $slug)->first();
+        if (!$class) return redirect('/');
 
         return Inertia::render('Public/SubmitSuccess', [
             'base_name' => $class->name,

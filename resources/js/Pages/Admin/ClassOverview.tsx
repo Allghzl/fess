@@ -1,7 +1,7 @@
-import { Link } from '@inertiajs/react';
-import AdminLayout from '@/Layouts/AdminLayout';
-import { PageHeader } from '@/components/ui';
-import { ClassWorkspace } from '@/types';
+import { Link } from "@inertiajs/react";
+import AdminLayout from "@/Layouts/AdminLayout";
+import { PageHeader } from "@/components/ui";
+import { ClassWorkspace } from "@/types";
 
 interface Stats {
     pending: number;
@@ -11,39 +11,80 @@ interface Stats {
     takedown_pending: number;
 }
 
-export default function ClassOverview({ class: cls, stats }: { class: ClassWorkspace; stats: Stats }) {
+export default function ClassOverview({
+    class: cls,
+    stats,
+}: {
+    class: ClassWorkspace;
+    stats: Stats;
+}) {
     const base = `/admin/classes/${cls.id}`;
 
     const statItems = [
-        { label: 'Menunggu',         value: stats.pending,          color: 'text-[var(--color-warning)]',   href: `${base}/submissions` },
-        { label: 'Disetujui',        value: stats.approved,         color: 'text-[var(--color-success)]',   href: `${base}/approved` },
-        { label: 'Ditolak',          value: stats.rejected,         color: 'text-[var(--color-ink-muted)]', href: `${base}/submissions` },
-        { label: 'Diturunkan',       value: stats.taken_down,       color: 'text-[var(--color-danger)]',    href: `${base}/takedowns` },
-        { label: 'Takedown Pending', value: stats.takedown_pending, color: 'text-[var(--color-danger)]',    href: `${base}/takedowns` },
+        {
+            label: "Menunggu",
+            value: stats.pending,
+            color: "text-[var(--color-warning)]",
+            href: `${base}/submissions`,
+        },
+        {
+            label: "Disetujui",
+            value: stats.approved,
+            color: "text-[var(--color-success)]",
+            href: `${base}/approved`,
+        },
+        {
+            label: "Ditolak",
+            value: stats.rejected,
+            color: "text-[var(--color-ink-muted)]",
+            href: `${base}/submissions`,
+        },
+        {
+            label: "Diturunkan",
+            value: stats.taken_down,
+            color: "text-[var(--color-danger)]",
+            href: `${base}/takedowns`,
+        },
+        {
+            label: "Takedown Pending",
+            value: stats.takedown_pending,
+            color: "text-[var(--color-danger)]",
+            href: `${base}/takedowns`,
+        },
     ];
 
     const quickLinks = [
-        { label: 'Buka Inbox',       href: `${base}/submissions`, primary: true },
-        { label: 'Konten Disetujui', href: `${base}/approved` },
-        { label: 'Takedown',         href: `${base}/takedowns` },
-        { label: 'Desain',           href: `${base}/designs` },
-        { label: 'Anggota',          href: `${base}/members` },
-        { label: 'Pengaturan',       href: `${base}/settings` },
+        { label: "Buka Inbox", href: `${base}/submissions`, primary: true },
+        { label: "Konten Disetujui", href: `${base}/approved` },
+        { label: "Takedown", href: `${base}/takedowns` },
+        { label: "Desain", href: `${base}/designs` },
+        { label: "Anggota", href: `${base}/members` },
+        { label: "Pengaturan", href: `${base}/settings` },
     ];
 
     return (
         <AdminLayout classInfo={{ id: cls.id, name: cls.name }}>
             <PageHeader
-                back={{ label: 'Dashboard', href: '/admin' }}
+                back={{ label: "Dashboard", href: "/admin" }}
                 title={cls.name}
                 subtitle={cls.short_code}
             />
 
-            <div className="flex flex-wrap gap-x-6 gap-y-3 mb-8">
+            <div className="flex divide-x divide-[var(--color-border)] mb-8">
                 {statItems.map((s) => (
-                    <Link key={s.label} href={s.href} className="group flex items-baseline gap-1.5">
-                        <span className={`text-2xl font-bold tabular-nums ${s.color}`}>{s.value}</span>
-                        <span className="text-xs text-[var(--color-ink-muted)] group-hover:text-[var(--color-ink)] transition-colors">{s.label}</span>
+                    <Link
+                        key={s.label}
+                        href={s.href}
+                        className="group flex-1 flex flex-col justify-between px-4 py-3 min-w-0"
+                    >
+                        <span
+                            className={`text-3xl font-black tabular-nums leading-none ${s.color}`}
+                        >
+                            {s.value}
+                        </span>
+                        <span className="text-xs text-[var(--color-ink-muted)] group-hover:text-[var(--color-ink)] transition-colors leading-tight mt-2">
+                            {s.label}
+                        </span>
                     </Link>
                 ))}
             </div>
@@ -53,12 +94,20 @@ export default function ClassOverview({ class: cls, stats }: { class: ClassWorks
                     <Link
                         key={link.label}
                         href={link.href}
-                        className="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm hover:bg-[var(--color-surface-hover)] transition-colors"
+                        className="flex items-center justify-between px-3 py-2.5 text-sm rounded-xs hover:bg-lime-700/25 transition-colors"
                     >
-                        <span className={link.primary ? 'text-[var(--color-accent-text)] font-medium' : 'text-[var(--color-ink-muted)]'}>
+                        <span
+                            className={
+                                link.primary
+                                    ? "text-[var(--color-accent-text)] font-medium"
+                                    : "text-[var(--color-ink-muted)]"
+                            }
+                        >
                             {link.label}
                         </span>
-                        <span className="text-[var(--color-ink-subtle)]">→</span>
+                        <span className="text-[var(--color-ink-subtle)]">
+                            →
+                        </span>
                     </Link>
                 ))}
             </nav>

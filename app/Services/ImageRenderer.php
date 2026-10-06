@@ -217,7 +217,7 @@ class ImageRenderer
     {
         if ($startMs === null) return '';
         $start = $this->formatMusicTime($startMs);
-        if ($durationMs === null) return 'from ' . $start;
+        if ($durationMs === null) return $start;
         return $start . " \u{2014} " . $this->formatMusicTime($startMs + $durationMs);
     }
 
@@ -999,7 +999,7 @@ class ImageRenderer
                     $gaps     = count($words) - 1;
                     $gapW     = ($contentW - $totalWordW) / $gaps;
                     $avgWordW = $totalWordW / count($words);
-                    if ($gapW > $avgWordW * 0.6) $gapW = 0;
+                    if ($gapW > $avgWordW * 0.25) $gapW = 0;
                 }
                 if ($gapW <= 0 || $idx === $lastIdx || count($words) <= 1) {
                     imagettftext($c, $bestSize * 0.75, 0, $margin, $curMsgY + $th, $mainClr, $fontReg, $line);
@@ -1112,14 +1112,14 @@ class ImageRenderer
         }
         $this->drawWebsiteLabelAt($c, $w, $cfg, $metaClr, $margin, $footer['website_y']);
 
-        // Music card right — light bg, dark card with LIGHT text
+        // Music card right — light bg preset, use DARK card so text is readable on cream
         if ($music['has_music']) {
             $this->drawMusicCard($c, $music, $w, (int)($w * 0.074), $footer['music_y'], [
-                'bg_rgba'          => [28, 24, 20, 35],
+                'bg_rgba'          => [28, 24, 20, 18],   // dark card, more opaque on light bg
                 'placeholder_rgba' => [90, 130, 88, 60],
-                'text_main'        => imagecolorallocate($c, 250, 248, 240),
-                'text_dim'         => imagecolorallocate($c, 210, 206, 196),
-                'text_meta'        => imagecolorallocate($c, 180, 176, 166),
+                'text_main'        => imagecolorallocate($c, 28, 24, 20),   // near-black
+                'text_dim'         => imagecolorallocate($c, 80, 76, 68),
+                'text_meta'        => imagecolorallocate($c, 130, 126, 118),
                 'accent'           => $accentC,
             ], $isStory);
         }
@@ -1211,11 +1211,8 @@ class ImageRenderer
             }
         }
 
-        // ── Footer: rule + tags/website left (bottom-anchored), music right ──
+        // ── Footer: rule + website left (bottom-anchored), music right ──
         imageline($c, $margin, $footer['zone_top'] + 4, $w - $margin, $footer['zone_top'] + 4, $ruleClr);
-        if (!empty($tags)) {
-            $this->drawCategoryRow($c, $tags, $margin, $footer['tags_y'], (int)(($split - $margin) * 0.85), $p);
-        }
         $this->drawWebsiteLabelAt($c, $w, $cfg, $metaClr, $margin, $footer['website_y']);
 
         if ($music['has_music']) {
@@ -1317,13 +1314,12 @@ class ImageRenderer
         $tagStripY = $split + 8;
         $tagStripH = !empty($tags) ? 40 : 0;
         if (!empty($tags)) {
-            // Right-aligned: start from midpoint, dark text so visible on dark bg
             $tagOverride = array_merge($p, [
-                'tag_bg'   => [255, 255, 255, 30],   // solid white pill (GD alpha 30 ≈ 76% opaque)
-                'tag_text' => [10, 10, 12],           // near-black — visible on white pill
+                'tag_bg'   => [255, 255, 255, 30],
+                'tag_text' => [10, 10, 12],
             ]);
-            $tagStartX = (int)($w * 0.52);
-            $tagMaxW   = $w - $margin - $tagStartX;
+            $tagMaxW   = (int) ($w * 0.42);
+            $tagStartX = $w - $margin - $tagMaxW;
             $this->drawCategoryRow($c, $tags, $tagStartX, $tagStripY, $tagMaxW, $tagOverride);
         }
 
@@ -1653,6 +1649,22 @@ class ImageRenderer
         $words = preg_split('/\s+/', trim($text), -1, PREG_SPLIT_NO_EMPTY);
         $lines = []; $line = '';
         foreach ($words as $word) {
+            // If a single word is wider than maxW, break it character by character
+            $wordBbox = imagettfbbox($ptSize, 0, $font, $word);
+            if (abs($wordBbox[2] - $wordBbox[0]) > $maxW) {
+                if ($line !== '') { $lines[] = $line; $line = ''; }
+                $chunk = '';
+                foreach (mb_str_split($word) as $char) {
+                    $test = $chunk . $char;
+                    $bbox = imagettfbbox($ptSize, 0, $font, $test);
+                    if (abs($bbox[2] - $bbox[0]) > $maxW && $chunk !== '') {
+                        $lines[] = $chunk;
+                        $chunk = $char;
+                    } else { $chunk = $test; }
+                }
+                $line = $chunk;
+                continue;
+            }
             $test = $line === '' ? $word : "$line $word";
             $bbox = imagettfbbox($ptSize, 0, $font, $test);
             if (abs($bbox[2] - $bbox[0]) > $maxW && $line !== '') {

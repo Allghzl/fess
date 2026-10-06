@@ -25,7 +25,7 @@ class PublicSubmissionTest extends TestCase
     {
         $class = ClassWorkspace::factory()->create(['is_active' => false]);
 
-        $this->get("/b/{$class->slug}")->assertNotFound();
+        $this->get("/b/{$class->slug}")->assertRedirect('/');
     }
 
     public function test_unauthenticated_submit_form_redirects_to_login(): void
