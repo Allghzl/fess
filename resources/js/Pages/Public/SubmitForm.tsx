@@ -4,6 +4,7 @@ import { Button, Input, Textarea, Field } from '@/components/ui';
 import MusicField from '@/components/music/MusicField';
 import type { SelectedMusic } from '@/components/music/types';
 import { selectedMusicToPayload } from '@/components/music/types';
+import { stripEmoji } from '@/utils/stripEmoji';
 
 interface Base {
     id: string;
@@ -68,8 +69,8 @@ export default function SubmitForm({ base, tags = [] }: Props) {
     const [selectedMusic, setSelectedMusic] = useState<SelectedMusic | null>(null);
 
     function handleMessage(e: React.ChangeEvent<HTMLTextAreaElement>) {
-        setData('message', e.target.value);
-        setCharCount(e.target.value.length);
+        setData('message', stripEmoji(e.target.value));
+        setCharCount(stripEmoji(e.target.value).length);
     }
 
     function selectTag(id: string) {

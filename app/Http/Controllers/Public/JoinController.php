@@ -25,13 +25,15 @@ class JoinController extends Controller
      */
     public function show(Request $request)
     {
-        $code = $request->input('code', '');
+        $code     = $request->input('code', '');
+        $returnTo = $code ? '/join?code=' . urlencode($code) : '/join';
 
         return Inertia::render('Public/Join', [
             'prefill_code' => $code,
             'auth_user'    => $request->user() ? [
                 'name' => $request->user()->name,
             ] : null,
+            'login_url'    => route('auth.login', ['redirect' => $returnTo]),
         ]);
     }
 
@@ -72,11 +74,13 @@ class JoinController extends Controller
         try {
             $result = $this->invitationService->claimInvitation($invitation, $request->user());
         } catch (RuntimeException $e) {
+            if (in_array($e->getMessage(), ['already_member', 'request_pending'])) {
+                return redirect()->route('admin.classes.overview', ['class' => $invitation->class_id]);
+            }
+
             $message = match ($e->getMessage()) {
-                'already_member'  => 'Kamu sudah menjadi admin base ini.',
-                'request_pending' => 'Kamu sudah memiliki permintaan bergabung yang sedang menunggu persetujuan.',
-                'invite_invalid'  => 'Invite sudah tidak berlaku.',
-                default           => 'Gagal memproses invite. Coba lagi.',
+                'invite_invalid' => 'Invite sudah tidak berlaku.',
+                default          => 'Gagal memproses invite. Coba lagi.',
             };
 
             return back()->withErrors(['code' => $message])->withInput();

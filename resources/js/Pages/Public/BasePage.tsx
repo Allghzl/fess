@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { router } from '@inertiajs/react';
 import { Button, Textarea, Input, Field } from '@/components/ui';
 import PublicShell from '@/Layouts/PublicShell';
 import MusicField from '@/components/music/MusicField';
 import type { SelectedMusic } from '@/components/music/types';
 import { selectedMusicToPayload } from '@/components/music/types';
+import { stripEmoji } from '@/utils/stripEmoji';
 
 interface Base {
     id: string;
@@ -29,6 +30,11 @@ interface Props {
     errors?: Record<string, string>;
 }
 
+function isInAppBrowser(): boolean {
+    const ua = navigator.userAgent || '';
+    return /Instagram|FBAN|FBAV|FB_IAB|MessengerForiOS|Musical\.ly|TikTok/i.test(ua);
+}
+
 export default function BasePage({ base, tags = [], auth_user, errors }: Props) {
     const [message, setMessage]             = useState('');
     const [targetText, setTargetText]       = useState('');
@@ -38,7 +44,12 @@ export default function BasePage({ base, tags = [], auth_user, errors }: Props) 
     const [loading, setLoading]             = useState(false);
     const [note, setNote]                   = useState('');
     const [showNote, setShowNote]           = useState(false);
+    const [inAppBrowser, setInAppBrowser]   = useState(false);
     const MAX = 2000;
+
+    useEffect(() => {
+        setInAppBrowser(isInAppBrowser());
+    }, []);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -66,6 +77,8 @@ export default function BasePage({ base, tags = [], auth_user, errors }: Props) 
 
     // Unauth — PublicShell centered, narrow
     if (!auth_user) {
+        const loginUrl = `${window.location.origin}/auth/login?redirect=/b/${base.slug}`;
+
         return (
             <PublicShell
                 title="Kirim Menfess"
@@ -78,17 +91,47 @@ export default function BasePage({ base, tags = [], auth_user, errors }: Props) 
                         <span className="text-[var(--color-ink)] capitalize">{base.name}</span>.
                         Identitasmu tidak ditampilkan ke siapapun — hanya pesanmu yang terlihat.
                     </p>
-                    <Button
-                        variant="primary"
-                        size="lg"
-                        className="w-full"
-                        onClick={() => { window.location.href = `/auth/login?redirect=/b/${base.slug}`; }}
-                    >
-                        Login untuk Kirim
-                    </Button>
-                    <p className="text-xs text-[var(--color-ink-subtle)] text-center">
-                        Login hanya untuk mencegah spam.
-                    </p>
+
+                    {inAppBrowser ? (
+                        <div className="space-y-3">
+                            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-sm text-[var(--color-ink-muted)] leading-relaxed">
+                                Login tidak bisa dilakukan lewat browser bawaan Instagram.<br />
+                                Buka halaman ini di browser seperti Chrome atau Safari.
+                            </div>
+                            <Button
+                                variant="primary"
+                                size="lg"
+                                className="w-full"
+                                onClick={() => {
+                                    // Copy link — user can paste in external browser
+                                    if (navigator.clipboard) {
+                                        navigator.clipboard.writeText(window.location.href);
+                                    }
+                                    // Attempt to open in system browser (works on some Android WebViews)
+                                    window.location.href = `intent://${window.location.host}${window.location.pathname}#Intent;scheme=https;package=com.android.chrome;end`;
+                                }}
+                            >
+                                Buka di Browser
+                            </Button>
+                            <p className="text-xs text-[var(--color-ink-subtle)] text-center">
+                                Salin link lalu buka di Chrome / Safari.
+                            </p>
+                        </div>
+                    ) : (
+                        <>
+                            <Button
+                                variant="primary"
+                                size="lg"
+                                className="w-full"
+                                onClick={() => { window.location.href = `/auth/login?redirect=/b/${base.slug}`; }}
+                            >
+                                Login untuk Kirim
+                            </Button>
+                            <p className="text-xs text-[var(--color-ink-subtle)] text-center">
+                                Login hanya untuk mencegah spam.
+                            </p>
+                        </>
+                    )}
                 </div>
                 <div className="mt-8 text-center">
                     <a href="/" className="text-xs text-[var(--color-ink-subtle)] hover:text-[var(--color-ink-muted)] transition-colors">← Beranda</a>
@@ -117,7 +160,7 @@ export default function BasePage({ base, tags = [], auth_user, errors }: Props) 
                     <div className="relative flex-1 flex flex-col">
                         <textarea
                             value={message}
-                            onChange={e => setMessage(e.target.value.slice(0, MAX))}
+                            onChange={e => setMessage(stripEmoji(e.target.value).slice(0, MAX))}
                             placeholder="Tulis pesanmu di sini..."
                             className={`flex-1 w-full min-h-[300px] md:min-h-0 resize-none rounded-xl border bg-[var(--color-surface)] text-[var(--color-ink)] text-sm px-4 py-3 focus:outline-none focus:border-[var(--color-accent)] placeholder:text-[var(--color-ink-subtle)] transition-colors ${errors?.message ? 'border-[var(--color-danger)]' : 'border-[var(--color-border)]'}`}
                         />

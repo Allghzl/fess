@@ -5,6 +5,7 @@ import { Button } from "@/components/ui";
 interface Props {
     prefill_code: string;
     auth_user: { name: string } | null;
+    login_url: string;
     errors?: { code?: string };
 }
 
@@ -66,7 +67,7 @@ function InviteCodeInput({
     );
 }
 
-export default function Join({ prefill_code, auth_user, errors }: Props) {
+export default function Join({ prefill_code, auth_user, login_url, errors }: Props) {
     const [code, setCode] = useState(
         (prefill_code || "")
             .replace(/[^A-Za-z0-9]/g, "")
@@ -95,7 +96,7 @@ export default function Join({ prefill_code, auth_user, errors }: Props) {
     return (
         <div className="min-h-screen bg-[var(--color-canvas)] flex items-center justify-center px-4">
             <div className="w-full max-w-xs">
-                <div className="mb-8">
+                <div className={`mb-8 transition-all${!auth_user ? " blur-[2px] opacity-50 pointer-events-none select-none" : ""}`}>
                     <h1 className="text-xl font-semibold text-[var(--color-ink)]">
                         Gabung Base
                     </h1>
@@ -104,37 +105,51 @@ export default function Join({ prefill_code, auth_user, errors }: Props) {
                     </p>
                 </div>
 
-                {auth_user && (
-                    <p className="mb-5 text-xs text-[var(--color-success)]">
-                        {auth_user.name}
-                    </p>
-                )}
-
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <InviteCodeInput
-                            value={code}
-                            onChange={setCode}
-                            hasError={!!errors?.code}
-                        />
-                        {errors?.code && (
-                            <p className="mt-2 text-xs text-[var(--color-danger)] text-center">
-                                {errors.code}
-                            </p>
-                        )}
+                {!auth_user ? (
+                    <div className="space-y-4">
+                        <p className="text-sm text-[var(--color-ink-muted)]">
+                            Kamu perlu login dulu untuk bergabung ke base.
+                        </p>
+                        <a
+                            href={login_url}
+                            className="inline-flex items-center justify-center gap-2 font-semibold rounded-[10px] transition-colors select-none whitespace-nowrap w-full px-5 py-2.5 text-sm h-10 bg-[var(--color-accent)] text-[#0B0D0E] hover:bg-[var(--color-accent-hover)]"
+                        >
+                            Login
+                        </a>
                     </div>
+                ) : (
+                    <>
+                        <p className="mb-5 text-xs text-[var(--color-success)]">
+                            {auth_user.name}
+                        </p>
 
-                    <Button
-                        type="submit"
-                        variant="primary"
-                        size="lg"
-                        loading={loading}
-                        disabled={!isComplete}
-                        className="w-full"
-                    >
-                        {loading ? "Memproses..." : "Lanjutkan"}
-                    </Button>
-                </form>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <InviteCodeInput
+                                    value={code}
+                                    onChange={setCode}
+                                    hasError={!!errors?.code}
+                                />
+                                {errors?.code && (
+                                    <p className="mt-2 text-xs text-[var(--color-danger)] text-center">
+                                        {errors.code}
+                                    </p>
+                                )}
+                            </div>
+
+                            <Button
+                                type="submit"
+                                variant="primary"
+                                size="lg"
+                                loading={loading}
+                                disabled={!isComplete}
+                                className="w-full"
+                            >
+                                {loading ? "Memproses..." : "Lanjutkan"}
+                            </Button>
+                        </form>
+                    </>
+                )}
 
                 <div className="mt-8">
                     <a

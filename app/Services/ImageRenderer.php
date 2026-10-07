@@ -154,6 +154,16 @@ class ImageRenderer
     }
 
     /**
+     * Strip emoji and other characters GD cannot render (outside BMP or missing glyphs).
+     * Text is preserved in DB and web — this only affects the generated image.
+     */
+    private function sanitizeForRender(string $text): string
+    {
+        // Remove emoji (U+1F000–U+1FFFF), supplemental symbols, pictographs, etc.
+        return preg_replace('/[\x{1F000}-\x{1FFFF}\x{2600}-\x{27BF}\x{FE00}-\x{FEFF}]/u', '', $text) ?? $text;
+    }
+
+    /**
      * Draw a thick arc (ring segment) by stacking multiple single-pixel arcs.
      * $cx/$cy: center in pixels. $r: outer radius. $thickness: pixels.
      * $startDeg/$endDeg: GD convention (0=3 o'clock, CW).
@@ -389,6 +399,19 @@ class ImageRenderer
     public function render(array $config): \GdImage
     {
         $config['show_public_id'] = true;
+
+        // Strip emoji before rendering — GD cannot render them, shows garbled chars
+        if (!empty($config['message'])) {
+            $config['message'] = $this->sanitizeForRender($config['message']);
+        }
+        foreach (['target_text', 'alias_text', 'song_text', 'artist_text'] as $field) {
+            if (!empty($config[$field])) {
+                $config[$field] = $this->sanitizeForRender($config[$field]);
+            }
+        }
+        if (!empty($config['tags'])) {
+            $config['tags'] = array_map([$this, 'sanitizeForRender'], $config['tags']);
+        }
 
         $format = DesignFormat::from($config['format'] ?? 'story');
         $dim    = $format->dimensions();
