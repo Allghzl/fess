@@ -309,7 +309,7 @@ class RenderController extends Controller
         $config['class']         = [
             'name'             => $class->name,
             'logo_asset_key'   => $class->logo_asset_key,
-            'website_label'    => $class->website_label,
+            'website_label'    => config('app.url') . '/b/' . $class->slug,
             'instagram_handle' => $class->instagram_handle,
         ];
         $config['show_public_id'] = true;

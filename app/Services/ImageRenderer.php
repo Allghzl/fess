@@ -1310,30 +1310,56 @@ class ImageRenderer
         $isStory     = ($cfg['format'] ?? 'story') === 'story';
         $musicCardH  = $this->measureMusicCard($isStory, $music['has_music']);
 
-        // ── Tags strip: right side of split line, dark text on white pill ─
+        // ── Tags strip: right-aligned pills just below split ─────────────
         $tagStripY = $split + 8;
-        $tagStripH = !empty($tags) ? 40 : 0;
+        $tagStripH = !empty($tags) ? 44 : 0;
         if (!empty($tags)) {
             $tagOverride = array_merge($p, [
                 'tag_bg'   => [255, 255, 255, 30],
                 'tag_text' => [10, 10, 12],
             ]);
-            $tagMaxW   = (int) ($w * 0.42);
-            $tagStartX = $w - $margin - $tagMaxW;
-            $this->drawCategoryRow($c, $tags, $tagStartX, $tagStripY, $tagMaxW, $tagOverride);
+            // Measure pills right-to-left so they anchor to right margin
+            $font    = $this->fontPath(false);
+            $tagSize = 18;
+            $pillsData = [];
+            $totalPillW = 0;
+            foreach (array_slice($tags, 0, 3) as $tagName) {
+                $label = mb_strtoupper($tagName);
+                if ($font) {
+                    $bbox = imagettfbbox($tagSize * 0.75, 0, $font, $label);
+                    $tw   = abs($bbox[2] - $bbox[0]);
+                    $th   = abs($bbox[7] - $bbox[1]);
+                } else { $tw = strlen($label) * 8; $th = 12; }
+                $pillW = $tw + 20; $pillH = $th + 14;
+                $pillsData[] = ['label' => $label, 'tw' => $tw, 'th' => $th, 'pillW' => $pillW, 'pillH' => $pillH];
+                $totalPillW += $pillW + 8;
+            }
+            $totalPillW = max(0, $totalPillW - 8);
+            $curX = $w - $margin - $totalPillW;
+            [$tbr, $tbg, $tbb] = $tagOverride['tag_bg'];
+            $tba   = $tagOverride['tag_bg'][3] ?? 30;
+            $tagBg = imagecolorallocatealpha($c, $tbr, $tbg, $tbb, $tba);
+            $tagTxt = $this->gdColor($c, $tagOverride['tag_text']);
+            foreach ($pillsData as $pill) {
+                $this->filledRoundedRect($c, $curX, $tagStripY, $curX + $pill['pillW'], $tagStripY + $pill['pillH'], 8, $tagBg);
+                if ($font) {
+                    imagettftext($c, $tagSize * 0.75, 0, $curX + 10, $tagStripY + $pill['pillH'] - (int)(($pill['pillH'] - $pill['th']) / 2), $tagTxt, $font, $pill['label']);
+                } else {
+                    imagestring($c, 3, $curX + 10, $tagStripY + 7, $pill['label'], $tagTxt);
+                }
+                $curX += $pill['pillW'] + 8;
+            }
         }
 
-        $bodyTop = $split + $tagStripH + (int)($h * 0.025);
+        $bodyTop = $split + $tagStripH + (int)($h * 0.03);
 
         // ── Footer zone ───────────────────────────────────────────────────
         $footer  = $this->computeFooter($h, false, $music['has_music'], $isStory);
 
-        // ── Message: full width, vertically centered in remaining space ───
+        // ── Message: start from top of body zone (not centered) ─────────
         $msgBtm  = $footer['zone_top'] - 8;
-        $availH  = $msgBtm - $bodyTop;
-        $msgH    = $this->estimateTextHeight($message, $contentW, 28, 66);
-        $startY  = $bodyTop + (int) max(0, ($availH - $msgH) / 2);
-        $msgMaxH = $msgBtm - $startY - 8;
+        $msgMaxH = $msgBtm - $bodyTop - 8;
+        $startY  = $bodyTop;
 
         if ($message) {
             $result = $this->drawTextAutoSize($c, $message, $margin, $startY, $contentW, max(60, $msgMaxH), 28, 66, $mainClr, false);

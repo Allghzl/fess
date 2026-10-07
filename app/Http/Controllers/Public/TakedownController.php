@@ -24,7 +24,9 @@ class TakedownController extends Controller
      */
     public function show(): Response
     {
-        return Inertia::render('Public/Takedown');
+        return Inertia::render('Public/Takedown', [
+            'id_prefix' => config('menfess.public_id_prefix', 'MF'),
+        ]);
     }
 
     /**

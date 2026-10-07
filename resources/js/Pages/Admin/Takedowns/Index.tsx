@@ -1,6 +1,6 @@
 import AdminLayout from '@/Layouts/AdminLayout';
 import { ClassWorkspace, TakedownRequest } from '@/types';
-import { Link } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { PageHeader, StatusBadge, EmptyState } from '@/components/ui';
 
 interface Paginated<T> {
@@ -66,7 +66,11 @@ export default function TakedownsIndex({
             ) : (
                 <div className="divide-y divide-[var(--color-border)] border-y border-[var(--color-border)]">
                     {requests.data.map((req) => (
-                        <div key={req.id} className="flex items-center justify-between py-4 gap-4 hover:bg-[var(--color-surface-raised)] transition-colors px-1">
+                        <div
+                            key={req.id}
+                            onClick={() => router.visit(`/admin/classes/${cls.id}/takedowns/${req.id}`)}
+                            className="flex items-center justify-between py-4 gap-4 hover:bg-[var(--color-surface-raised)] transition-colors px-1 cursor-pointer"
+                        >
                             <div className="min-w-0">
                                 <p className="font-mono text-sm font-medium text-[var(--color-ink)]">
                                     {req.public_id_snapshot}
@@ -77,7 +81,7 @@ export default function TakedownsIndex({
                                     {new Date(req.created_at).toLocaleDateString('id-ID')}
                                 </p>
                             </div>
-                            <div className="flex items-center gap-3 shrink-0">
+                            <div className="flex items-center gap-3 shrink-0" onClick={e => e.stopPropagation()}>
                                 <StatusBadge status={req.status} />
                                 <Link
                                     href={`/admin/classes/${cls.id}/takedowns/${req.id}`}
