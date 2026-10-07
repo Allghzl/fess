@@ -94,7 +94,7 @@ export default function ClassOverview({
                     <Link
                         key={link.label}
                         href={link.href}
-                        className="flex items-center justify-between px-3 py-2.5 text-sm rounded-xs hover:bg-lime-700/25 transition-colors"
+                        className="flex items-center justify-between px-3 py-2.5 text-sm rounded-lg hover:bg-[var(--color-surface-raised)] transition-colors"
                     >
                         <span
                             className={

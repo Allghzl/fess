@@ -1,7 +1,7 @@
 import { Link } from "@inertiajs/react";
 import { Inbox } from "lucide-react";
 import AdminLayout from "@/Layouts/AdminLayout";
-import { Badge, EmptyState } from "@/components/ui";
+import { Badge, Button, EmptyState } from "@/components/ui";
 
 interface Base {
     id: string;
@@ -19,9 +19,9 @@ interface Props {
 }
 
 const BTN_PRIMARY =
-    "inline-flex items-center justify-center font-semibold rounded-md px-4 py-2 text-sm h-9 bg-[var(--color-accent)] text-[#0B0D0E] hover:bg-[var(--color-accent-hover)] transition-colors";
+    "inline-flex items-center justify-center font-semibold rounded-[10px] px-4 py-2 text-sm h-9 bg-[var(--color-accent)] text-[#0B0D0E] hover:bg-[var(--color-accent-hover)] transition-colors";
 const BTN_SECONDARY =
-    "inline-flex items-center justify-center font-semibold rounded-md px-4 py-2 text-sm h-9 bg-[var(--color-surface-raised)] text-[var(--color-ink)] border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] transition-colors";
+    "inline-flex items-center justify-center font-semibold rounded-[10px] px-4 py-2 text-sm h-9 bg-[var(--color-surface-raised)] text-[var(--color-ink)] border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] transition-colors";
 
 export default function Dashboard({ bases }: Props) {
     return (
@@ -47,10 +47,7 @@ export default function Dashboard({ bases }: Props) {
                     description="Buat base baru atau gunakan kode undangan untuk bergabung ke base yang sudah ada."
                     action={
                         <div className="flex gap-3">
-                            <Link
-                                href="/admin/bases/create"
-                                className={BTN_PRIMARY}
-                            >
+                            <Link href="/admin/bases/create" className={BTN_PRIMARY}>
                                 Buat Base
                             </Link>
                             <Link href="/join" className={BTN_SECONDARY}>

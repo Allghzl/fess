@@ -8,6 +8,8 @@ interface Props {
     children: ReactNode;
     /** Show footer nav links */
     footer?: boolean;
+    /** Max width of content, default max-w-sm */
+    maxWidth?: string;
 }
 
 /**
@@ -19,11 +21,12 @@ export default function PublicShell({
     subtitle,
     children,
     footer = true,
+    maxWidth = "max-w-sm",
 }: Props) {
     return (
         <div className="min-h-screen bg-[var(--color-canvas)] flex flex-col">
             <div className="flex-1 flex items-center justify-center px-4 py-12">
-                <div className="w-full max-w-sm">
+                <div className={`w-full ${maxWidth}`}>
                     {/* Logo */}
                     <div className="flex justify-center mb-8">
                         <img

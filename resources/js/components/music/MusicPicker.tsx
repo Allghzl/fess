@@ -239,9 +239,10 @@ export default function MusicPicker({
                             value={query}
                             onChange={handleQueryChange}
                             onKeyDown={handleKeyDown}
-                            placeholder="Cari lagu, artis… (Enter untuk langsung cari)"
+                            placeholder="Cari lagu, artis…"
                             aria-label="Cari lagu"
-                            className="flex-1 bg-transparent text-sm text-ink placeholder:text-ink-subtle appearance-none border-none outline-none ring-0 shadow-none focus:border-transparent focus:outline-none focus:ring-0 focus:shadow-none focus:ring-offset-0"
+                            style={{ outline: 'none' }}
+                            className="flex-1 bg-transparent text-sm text-ink placeholder:text-ink-subtle appearance-none border-none"
                         />
                         {loading && (
                             <svg
@@ -263,11 +264,7 @@ export default function MusicPicker({
                             </svg>
                         )}
                     </div>
-                    <p className="mt-1.5 text-[10px] text-[var(--color-ink-subtle)]">
-                        Pencarian otomatis dalam 3 detik, atau tekan Enter untuk
-                        langsung cari.
-                    </p>
-                </div>
+                    </div>
 
                 {/* YouTube iframe preview — shown above results */}
                 {ytVideoId && (
