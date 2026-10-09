@@ -1,0 +1,16 @@
+{
+  "name": "@pinatmenfess/renderer",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node test/render-test.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "@resvg/resvg-js": "^2.6.0",
+    "satori": "^0.10.13",
+    "node-fetch": "^3.3.2"
+  }
+}

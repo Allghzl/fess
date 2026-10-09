@@ -7,6 +7,8 @@ use App\Models\ClassWorkspace;
 use App\Models\Submission;
 use App\Services\ImageRenderer;
 use App\Services\RenderConfigResolver;
+use App\Services\SatoriRenderer;
+use Illuminate\Support\Facades\Log;
 use App\Support\SubmissionStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -18,6 +20,7 @@ class RenderController extends Controller
     public function __construct(
         private ImageRenderer $renderer,
         private RenderConfigResolver $resolver,
+        private SatoriRenderer $satoriRenderer,
     ) {}
 
     // -------------------------------------------------------------------------
@@ -103,15 +106,46 @@ class RenderController extends Controller
         $this->assertApproved($submission, $class);
 
         $config = $this->buildConfig($request, $class, $submission);
+        $parts  = $this->splitMessage($config['message'] ?? '');
+        $base   = $submission->public_id ?? $submission->id;
+        $fmt    = $config['format'];
 
-        $png = $this->renderer->renderToPng($config);
+        if (count($parts) === 1) {
+            $png      = $this->renderPng($config);
+            $filename = "{$base}_{$fmt}.png";
+            return response($png, 200, [
+                'Content-Type'        => 'image/png',
+                'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+                'Content-Length'      => strlen($png),
+            ]);
+        }
 
-        $filename = ($submission->public_id ?? $submission->id) . '_' . $config['format'] . '.png';
+        // Two parts — return ZIP
+        $requestId = Str::uuid()->toString();
+        $tmpDir    = storage_path("app/tmp/renders/{$requestId}");
+        @mkdir($tmpDir, 0755, true);
 
-        return response($png, 200, [
-            'Content-Type'        => 'image/png',
-            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
-            'Content-Length'      => strlen($png),
+        foreach ($parts as $i => $part) {
+            $cfg             = $config;
+            $cfg['message']  = $part;
+            $cfg['public_id'] = $base . ' (' . ($i + 1) . '/' . count($parts) . ')';
+            $png = $this->renderPng($cfg);
+            file_put_contents($tmpDir . "/{$base}_{$fmt}_part" . ($i + 1) . '.png', $png);
+        }
+
+        $zipPath = $tmpDir . "/{$base}_{$fmt}.zip";
+        $zip     = new ZipArchive();
+        $zip->open($zipPath, ZipArchive::CREATE);
+        foreach (glob($tmpDir . '/*.png') as $f) $zip->addFile($f, basename($f));
+        $zip->close();
+
+        $zipData = file_get_contents($zipPath);
+        $this->cleanupTmpDir($tmpDir);
+
+        return response($zipData, 200, [
+            'Content-Type'        => 'application/zip',
+            'Content-Disposition' => "attachment; filename=\"{$base}_{$fmt}.zip\"",
+            'Content-Length'      => strlen($zipData),
         ]);
     }
 
@@ -131,9 +165,21 @@ class RenderController extends Controller
         $this->authorizeClassMember($request, $class);
         $this->assertApproved($submission, $class);
 
-        $config = $this->buildConfig($request, $class, $submission);
+        $config  = $this->buildConfig($request, $class, $submission);
+        $parts   = $this->splitMessage($config['message'] ?? '');
 
-        $png = $this->renderer->renderPreview($config);
+        // Preview always shows part 1 only
+        $config['message'] = $parts[0];
+        if (count($parts) > 1) {
+            $config['public_id'] = ($submission->public_id ?? 'MF-??????') . ' (1/' . count($parts) . ')';
+        }
+
+        try {
+            $png = $this->satoriRenderer->renderPreview($config);
+        } catch (\Throwable $e) {
+            Log::warning('SatoriRenderer failed, falling back to GD', ['error' => $e->getMessage()]);
+            $png = $this->renderer->renderPreview($config);
+        }
 
         return response($png, 200, ['Content-Type' => 'image/png']);
     }
@@ -214,12 +260,22 @@ class RenderController extends Controller
 
             $itemOverride = $itemOverrides[$submission->id] ?? null;
             $config = $this->buildConfigDirect($class, $submission, $bulkConfig, $itemOverride);
-            $config['show_public_id'] = true; // always
+            $config['show_public_id'] = true;
 
-            $png      = $this->renderer->renderToPng($config);
-            $filename = ($submission->public_id ?? $submission->id) . '_' . $format . '.png';
-            file_put_contents($tmpDir . '/' . $filename, $png);
-            $included[] = $filename;
+            $parts   = $this->splitMessage($config['message'] ?? '');
+            $base    = $submission->public_id ?? $submission->id;
+            $total   = count($parts);
+
+            foreach ($parts as $i => $part) {
+                $cfg             = $config;
+                $cfg['message']  = $part;
+                $cfg['public_id'] = $total > 1 ? "{$base} (" . ($i + 1) . "/{$total})" : $base;
+                $png      = $this->renderPng($cfg);
+                $suffix   = $total > 1 ? "_part" . ($i + 1) : '';
+                $filename = "{$base}_{$format}{$suffix}.png";
+                file_put_contents($tmpDir . '/' . $filename, $png);
+                $included[] = $filename;
+            }
         }
 
         if (empty($included)) {
@@ -324,6 +380,44 @@ class RenderController extends Controller
         $config['show_public_id'] = true;
 
         return $config;
+    }
+
+    /**
+     * Split a long message into at most 2 parts at a word boundary.
+     * Returns array of 1 or 2 strings.
+     */
+    private function splitMessage(string $message, int $maxChars = 1000): array
+    {
+        if (mb_strlen($message) <= $maxChars) return [$message];
+
+        // Find last space at or before $maxChars
+        $cut = mb_strrpos(mb_substr($message, 0, $maxChars), ' ');
+        if ($cut === false) $cut = $maxChars;
+
+        $part1 = trim(mb_substr($message, 0, $cut));
+        $part2 = trim(mb_substr($message, $cut));
+
+        // Truncate part2 to maxChars as well (hard cap at 2 pages)
+        if (mb_strlen($part2) > $maxChars) {
+            $cut2  = mb_strrpos(mb_substr($part2, 0, $maxChars), ' ');
+            $part2 = trim(mb_substr($part2, 0, $cut2 !== false ? $cut2 : $maxChars));
+        }
+
+        // Append page indicator to message text so reader knows there's a continuation
+        return [$part1 . ' (1/2)', $part2 . ' (2/2)'];
+    }
+
+    /**
+     * Render a single config, trying Satori first then falling back to GD.
+     */
+    private function renderPng(array $config): string
+    {
+        try {
+            return $this->satoriRenderer->render($config);
+        } catch (\Throwable $e) {
+            Log::warning('SatoriRenderer failed, falling back to GD', ['error' => $e->getMessage()]);
+            return $this->renderer->renderToPng($config);
+        }
     }
 
     private function assertApproved(Submission $submission, ClassWorkspace $class): void

@@ -5,7 +5,6 @@ import PublicShell from '@/Layouts/PublicShell';
 import MusicField from '@/components/music/MusicField';
 import type { SelectedMusic } from '@/components/music/types';
 import { selectedMusicToPayload } from '@/components/music/types';
-import { stripEmoji } from '@/utils/stripEmoji';
 
 interface Base {
     id: string;
@@ -76,7 +75,7 @@ export default function BasePage({ base, tags = [], errors }: Props) {
                     <div className="relative">
                         <Textarea
                             value={message}
-                            onChange={e => setMessage(stripEmoji(e.target.value).slice(0, MAX))}
+                            onChange={e => setMessage(e.target.value.slice(0, MAX))}
                             placeholder="Tulis pesanmu di sini..."
                             rows={5}
                             error={!!errors?.message}

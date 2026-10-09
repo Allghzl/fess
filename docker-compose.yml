@@ -80,8 +80,11 @@ services:
       APPLE_TIMEOUT_SEC: "${APPLE_TIMEOUT_SEC:-5}"
       MUSIC_CACHE_TTL: "${MUSIC_CACHE_TTL:-60}"
 
+      RENDERER_URL: "http://renderer:8766"
+
     depends_on:
       - ytmusic
+      - renderer
 
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/up"]
@@ -143,12 +146,23 @@ services:
 
       PUBLIC_ID_PREFIX: "${PUBLIC_ID_PREFIX:-MF}"
 
+      RENDERER_URL: "http://renderer:8766"
+
     depends_on:
       - ytmusic
+      - renderer
 
   ytmusic:
     build:
       context: services/ytmusic
+      dockerfile: Dockerfile
+
+    pull_policy: build
+    restart: unless-stopped
+
+  renderer:
+    build:
+      context: services/renderer
       dockerfile: Dockerfile
 
     pull_policy: build
