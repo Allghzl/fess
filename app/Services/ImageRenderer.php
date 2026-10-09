@@ -57,8 +57,8 @@ class ImageRenderer
             'text_main'   => [250, 248, 240],
             'text_dim'    => [160, 158, 148],
             'text_meta'   => [100, 98,  88],
-            'tag_bg'      => [200, 240, 80, 100],
-            'tag_text'    => [20,  20,  10],
+            'tag_bg'      => [200, 240, 80, 60],   // less transparent so pill is visible
+            'tag_text'    => [15,  15,   5],        // dark text on yellow-green pill — readable
         ],
 
         /**
@@ -1156,14 +1156,14 @@ class ImageRenderer
         }
         $this->drawWebsiteLabelAt($c, $w, $cfg, $metaClr, $margin, $footer['website_y']);
 
-        // Music card right — light bg preset, use DARK card so text is readable on cream
+        // Music card right — light bg preset, dark card so it contrasts cream bg; text must be LIGHT
         if ($music['has_music']) {
             $this->drawMusicCard($c, $music, $w, (int)($w * 0.074), $footer['music_y'], [
-                'bg_rgba'          => [28, 24, 20, 18],   // dark card, more opaque on light bg
+                'bg_rgba'          => [28, 24, 20, 18],   // dark card on cream bg
                 'placeholder_rgba' => [90, 130, 88, 60],
-                'text_main'        => imagecolorallocate($c, 28, 24, 20),   // near-black
-                'text_dim'         => imagecolorallocate($c, 80, 76, 68),
-                'text_meta'        => imagecolorallocate($c, 130, 126, 118),
+                'text_main'        => imagecolorallocate($c, 240, 236, 226),  // light — readable on dark card
+                'text_dim'         => imagecolorallocate($c, 190, 186, 176),
+                'text_meta'        => imagecolorallocate($c, 150, 146, 136),
                 'accent'           => $accentC,
             ], $isStory);
         }
