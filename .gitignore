@@ -29,6 +29,13 @@ Thumbs.db
 qa_screenshots_v2.zip
 .env.docker
 
+# Node sidecar dependencies
+services/renderer/node_modules/
+services/ytmusic/__pycache__/
+
+# Test render outputs
+storage/app/test-renders/*.png
+
 # Python bytecode
 __pycache__/
 *.pyc

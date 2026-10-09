@@ -427,11 +427,13 @@ class ImageRenderer
         $w      = $dim['width'];
         $h      = $dim['height'];
 
-        // M10: guard against OOM — 4 bytes/px * 3 (src + canvas + headroom)
-        $requiredBytes = $w * $h * 4 * 3;
-        $availableBytes = (int) ini_get('memory_limit') * 1024 * 1024 - memory_get_usage(true);
-        if ($requiredBytes > $availableBytes) {
-            throw new \RuntimeException("Insufficient memory to render {$w}×{$h} image.");
+        $memLimit = (int) ini_get('memory_limit');
+        if ($memLimit > 0) {
+            $requiredBytes  = $w * $h * 4 * 3;
+            $availableBytes = $memLimit * 1024 * 1024 - memory_get_usage(true);
+            if ($requiredBytes > $availableBytes) {
+                throw new \RuntimeException("Insufficient memory to render {$w}×{$h} image.");
+            }
         }
 
         $canvas = imagecreatetruecolor($w, $h);

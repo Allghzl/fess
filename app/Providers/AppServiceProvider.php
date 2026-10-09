@@ -22,6 +22,9 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(\App\Services\PublicIdGenerator::class);
         $this->app->singleton(\App\Services\PinatAuthService::class);
+        $this->app->bind(\App\Services\SatoriRenderer::class, fn() => new \App\Services\SatoriRenderer(
+            config('renderer.renderer_url', 'http://renderer:8766')
+        ));
     }
 
     public function boot(): void
