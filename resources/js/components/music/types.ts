@@ -56,8 +56,13 @@ export interface SelectedMusic {
 export interface MusicPayload {
     music_provider: string;
     music_track_id: string;
+    music_artwork_url: string | null;
+    music_track_url: string | null;
+    music_track_duration_ms: number;
     music_start_ms: number;
     music_duration_ms: number;
+    music_attribution_text: string | null;
+    music_attribution_required: boolean;
     // Legacy compat — populated from track, not user-entered
     song_text: string;
     artist_text: string;
@@ -72,13 +77,18 @@ export interface MusicSearchResult {
 
 export function selectedMusicToPayload(m: SelectedMusic): MusicPayload {
     return {
-        music_provider:     m.provider,
-        music_track_id:     m.trackId,
-        music_start_ms:     m.startMs,
-        music_duration_ms:  m.clipDurationMs,
-        song_text:          m.title,
-        artist_text:        m.artist ?? '',
-        song_start_seconds: Math.floor(m.startMs / 1000),
+        music_provider:             m.provider,
+        music_track_id:             m.trackId,
+        music_artwork_url:          m.artworkUrl,
+        music_track_url:            m.trackUrl,
+        music_track_duration_ms:    m.durationMs,
+        music_start_ms:             m.startMs,
+        music_duration_ms:          m.clipDurationMs,
+        music_attribution_text:     m.attributionText,
+        music_attribution_required: m.attributionRequired,
+        song_text:                  m.title,
+        artist_text:                m.artist ?? '',
+        song_start_seconds:         Math.floor(m.startMs / 1000),
     };
 }
 
