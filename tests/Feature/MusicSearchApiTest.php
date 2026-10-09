@@ -16,16 +16,22 @@ class MusicSearchApiTest extends TestCase
         return User::factory()->create();
     }
 
-    public function test_unauthenticated_returns_401(): void
+    public function test_unauthenticated_search_is_allowed(): void
     {
+        // H3 fix: music search is public (used by unauthenticated submit form)
+        $this->mock(MusicSearchService::class, function ($mock) {
+            $mock->shouldReceive('search')
+                ->once()
+                ->andReturn(['tracks' => [], 'total' => 0, 'hasMore' => false]);
+        });
+
         $response = $this->getJson('/api/music/search?q=test');
-        $response->assertStatus(401);
+        $response->assertOk();
     }
 
     public function test_query_too_short_returns_422(): void
     {
-        $user = $this->makeUser();
-        $response = $this->actingAs($user)->getJson('/api/music/search?q=a');
+        $response = $this->getJson('/api/music/search?q=a');
         $response->assertStatus(422);
     }
 

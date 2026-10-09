@@ -25,6 +25,18 @@ class Submission extends Model
         'song_text',
         'artist_text',
         'song_start_seconds',
+        'music_provider',
+        'music_track_id',
+        'music_artwork_url',
+        'music_artwork_path',
+        'music_track_url',
+        'music_track_duration_ms',
+        'music_start_ms',
+        'music_duration_ms',
+        'music_license',
+        'music_license_url',
+        'music_attribution_text',
+        'music_attribution_required',
         'status',
         'rejection_reason',
         'internal_note',
@@ -38,11 +50,15 @@ class Submission extends Model
     protected function casts(): array
     {
         return [
-            'status'              => SubmissionStatus::class,
-            'song_start_seconds'  => 'integer',
-            'approved_at'         => 'datetime',
-            'rejected_at'         => 'datetime',
-            'posted_at'           => 'datetime',
+            'status'                     => SubmissionStatus::class,
+            'song_start_seconds'         => 'integer',
+            'music_start_ms'             => 'integer',
+            'music_duration_ms'          => 'integer',
+            'music_track_duration_ms'    => 'integer',
+            'music_attribution_required' => 'boolean',
+            'approved_at'                => 'datetime',
+            'rejected_at'                => 'datetime',
+            'posted_at'                  => 'datetime',
         ];
     }
 

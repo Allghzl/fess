@@ -28,12 +28,13 @@ class PublicSubmissionTest extends TestCase
         $this->get("/b/{$class->slug}")->assertRedirect('/');
     }
 
-    public function test_unauthenticated_submit_form_redirects_to_login(): void
+    public function test_unauthenticated_submit_form_loads(): void
     {
         $class = ClassWorkspace::factory()->create(['is_active' => true]);
 
         $this->get("/b/{$class->slug}/submit")
-             ->assertRedirect();
+             ->assertOk()
+             ->assertInertia(fn ($page) => $page->component('Public/SubmitForm'));
     }
 
     public function test_authenticated_submit_form_loads(): void
@@ -66,13 +67,14 @@ class PublicSubmissionTest extends TestCase
         ]);
     }
 
-    public function test_unauthenticated_submit_store_returns_401(): void
+    public function test_unauthenticated_can_submit(): void
     {
         $class = ClassWorkspace::factory()->create(['is_active' => true]);
 
-        $this->postJson("/b/{$class->slug}/submit", [
+        $this->post("/b/{$class->slug}/submit", [
             'message' => 'Halo semua, ini pesan dari saya!',
-        ])->assertUnauthorized();
+            'consent' => true,
+        ])->assertRedirect("/b/{$class->slug}/submitted");
     }
 
     public function test_message_too_short(): void

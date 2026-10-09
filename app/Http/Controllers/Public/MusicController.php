@@ -17,7 +17,7 @@ class MusicController extends Controller
 
     public function search(Request $request): JsonResponse
     {
-        if (!Auth::check()) return response()->json(['error' => 'Unauthenticated'], 401);
+        // Public endpoint — no auth required (used by unauthenticated submit form)
 
         $request->validate([
             'q'     => 'required|string|min:2|max:100',
@@ -36,7 +36,7 @@ class MusicController extends Controller
 
     public function stream(Request $request, string $provider, string $trackId): mixed
     {
-        if (!Auth::check()) return response()->json(['error' => 'Unauthenticated'], 401);
+        // Public endpoint — no auth required
 
         // Only Audius has a server-side stream redirect; YouTube/Spotify/Apple do not
         if ($provider !== 'audius') {

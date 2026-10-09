@@ -73,11 +73,14 @@ Route::name('public.takedown.')->group(function () {
     Route::get('/takedown/success/{public_id}',     [TakedownController::class, 'success'])->name('success');
 });
 
-// Music search & stream (authenticated, rate-limited)
-Route::middleware('auth')->prefix('api/music')->name('api.music.')->group(function () {
+// Music search & stream — public (search/stream used by unauthenticated submit form)
+// health endpoint remains auth-only
+Route::prefix('api/music')->name('api.music.')->group(function () {
     Route::get('/search',                      [MusicController::class, 'search'])->name('search');
     Route::get('/stream/{provider}/{trackId}', [MusicController::class, 'stream'])->name('stream');
-    Route::get('/health',                      [MusicController::class, 'health'])->name('health');
+});
+Route::middleware('auth')->prefix('api/music')->name('api.music.')->group(function () {
+    Route::get('/health', [MusicController::class, 'health'])->name('health');
 });
 
 // Join base (public, but auth required to claim)

@@ -61,15 +61,15 @@ function SubmissionCard({ sub, classId }: { sub: SubmissionWithRead; classId: st
                 </div>
 
                 <div className="min-w-0 flex-1">
-                    <p className={`text-sm line-clamp-2 leading-relaxed ${
+                    <p className={`text-sm line-clamp-2 leading-relaxed break-words ${
                         sub.is_read ? 'text-[var(--color-ink-muted)]' : 'text-[var(--color-ink)] font-medium'
                     }`}>
                         {sub.original_message}
                     </p>
 
-                    <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                    <div className="mt-1.5 flex flex-wrap items-center gap-2 min-w-0">
                         {primaryCat && (
-                            <span className="inline-flex items-center rounded-full bg-[var(--color-surface-hover)] px-2 py-0.5 text-xs text-[var(--color-ink-muted)]">
+                            <span className="inline-flex items-center rounded-full bg-[var(--color-surface-hover)] px-2 py-0.5 text-xs text-[var(--color-ink-muted)] max-w-[8rem] truncate">
                                 {primaryCat}
                             </span>
                         )}
@@ -85,7 +85,7 @@ function SubmissionCard({ sub, classId }: { sub: SubmissionWithRead; classId: st
                             </span>
                         )}
                         {sub.target_text && (
-                            <span className="text-xs text-[var(--color-ink-subtle)]">→ {sub.target_text}</span>
+                            <span className="text-xs text-[var(--color-ink-subtle)] max-w-[10rem] truncate">→ {sub.target_text}</span>
                         )}
                         {sub.read_by_count > 0 && (
                             <span className="inline-flex items-center gap-1 text-xs text-[var(--color-ink-subtle)]" title={`Dibaca oleh ${sub.read_by_count} admin`}>

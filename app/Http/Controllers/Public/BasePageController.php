@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\ClassWorkspace;
 use App\Support\SubmissionStatus;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Inertia\Inertia;
 
@@ -63,11 +62,6 @@ class BasePageController extends Controller
 
         if (!$class) return redirect('/');
 
-        if (!Auth::check()) {
-            $returnTo = '/b/' . $slug . '/submit';
-            return redirect()->route('auth.login', ['redirect' => $returnTo]);
-        }
-
         return Inertia::render('Public/SubmitForm', [
             'base' => [
                 'id'         => $class->id,
@@ -98,10 +92,6 @@ class BasePageController extends Controller
 
         if (!$class) return redirect('/');
 
-        if (!Auth::check()) {
-            return response()->json(['error' => 'Unauthenticated'], 401);
-        }
-
         $data = $request->validate([
             'message'     => 'required|string|min:10|max:2000',
             'target_text' => 'nullable|string|max:120',
@@ -121,9 +111,8 @@ class BasePageController extends Controller
             'consent'     => 'accepted',
         ]);
 
-        // HMAC-based per-user rate limit key (no PII stored)
-        $user       = $request->user();
-        $limitKey   = 'submit:' . hash_hmac('sha256', $user->pinat_puid . ':' . $class->id, config('app.key'));
+        // Session-based rate limit — no PII, no IP, no login required
+        $limitKey   = 'submit:' . hash_hmac('sha256', session()->getId() . ':' . $class->id, config('app.key'));
         $maxPerHour = config('menfess.rate_limit.submit_per_hour', 5);
 
         if (RateLimiter::tooManyAttempts($limitKey, $maxPerHour)) {
