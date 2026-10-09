@@ -34,9 +34,18 @@ class ClassDesign extends Model
     protected function casts(): array
     {
         return [
-            'format'            => DesignFormat::class,
+            'format'             => DesignFormat::class,
             'feed_fallback_crop' => 'array',
-            'active'            => 'boolean',
+            'active'             => 'boolean',
+            'slot_index'         => 'integer',
+            'source_width'       => 'integer',
+            'source_height'      => 'integer',
+            'crop_x'             => 'float',
+            'crop_y'             => 'float',
+            'crop_width'         => 'float',
+            'crop_height'        => 'float',
+            'focal_x'            => 'float',
+            'focal_y'            => 'float',
         ];
     }
 

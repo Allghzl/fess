@@ -299,9 +299,18 @@ class RenderController extends Controller
         $config['target_text']   = $submission->target_text;
         $config['alias_text']    = $submission->alias_text;
         $config['category']      = $submission->category;
-        $config['song_text']     = $submission->song_text;
-        $config['artist_text']        = $submission->artist_text;
-        $config['song_start_seconds'] = $submission->song_start_seconds;
+        $config['song_text']              = $submission->song_text;
+        $config['artist_text']            = $submission->artist_text;
+        $config['song_start_seconds']     = $submission->song_start_seconds;
+        // Structured music metadata (V2) — provider omitted intentionally (no badge)
+        $config['music_track_id']         = $submission->music_track_id;
+        $config['music_artwork_url']      = $submission->music_artwork_url;
+        $config['music_artwork_path']     = $submission->music_artwork_path;
+        $config['music_start_ms']         = $submission->music_start_ms;
+        $config['music_duration_ms']      = $submission->music_duration_ms;
+        $config['music_track_duration_ms']= $submission->music_track_duration_ms;
+        $config['music_attribution_text'] = $submission->music_attribution_text;
+        $config['music_attribution_required'] = $submission->music_attribution_required;
         // Load tag names (not IDs) for the renderer
         $config['tags']          = $submission->relationLoaded('tags')
             ? $submission->tags->pluck('name')->toArray()

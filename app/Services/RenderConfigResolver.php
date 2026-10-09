@@ -17,11 +17,17 @@ class RenderConfigResolver
         ?array $itemOverride
     ): array {
         $classDefault = $this->classDefault($class);
-        // Do NOT use array_filter — it drops intentional false/0/null values
         $bulk = is_array($bulkOverride) ? $bulkOverride : [];
         $item = is_array($itemOverride) ? $itemOverride : [];
 
+        // H8: shallow array_merge clobbers nested 'design' key entirely.
+        // Merge top-level scalar keys shallowly, but deep-merge 'design' sub-array.
         $resolved = array_merge($classDefault, $bulk, $item);
+        $resolved['design'] = array_merge(
+            $classDefault['design'] ?? [],
+            $bulk['design']         ?? [],
+            $item['design']         ?? [],
+        );
 
         // enforce — never trust caller
         $resolved['show_public_id'] = true;

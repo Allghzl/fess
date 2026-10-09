@@ -137,26 +137,13 @@ class SubmissionController extends Controller
         abort_if($submission->class_id !== $class->id, 404);
         $this->authorize('update', $submission);
 
+        // Content fields (target_text, alias_text, category, song_text, etc.) are
+        // intentionally NOT editable — admins must not modify sender's words.
         $data = $request->validate([
-            'moderated_message' => 'nullable|string|max:2000',
-            'target_text'       => 'nullable|string|max:120',
-            'alias_text'        => 'nullable|string|max:80',
-            'category'          => 'nullable|string|max:60',
-            'song_text'         => 'nullable|string|max:200',
-            'artist_text'       => 'nullable|string|max:120',
-            'tag_ids'           => 'nullable|array|max:3',
-            'tag_ids.*'         => 'string|uuid',
-            'internal_note'     => 'nullable|string',
+            'internal_note' => 'nullable|string',
         ]);
 
-        $tagIds = [];
-        if (!empty($data['tag_ids'])) {
-            $tagIds = $class->tags()->whereIn('id', $data['tag_ids'])->pluck('id')->toArray();
-        }
-        unset($data['tag_ids']);
-
         $submission->fill($data)->save();
-        $submission->tags()->sync($tagIds);
 
         return back()->with('success', 'Saved.');
     }
@@ -199,25 +186,13 @@ class SubmissionController extends Controller
         $this->authorize('approve', $submission);
 
         $data = $request->validate([
-            'moderated_message' => 'nullable|string|max:2000',
-            'target_text'       => 'nullable|string|max:120',
-            'alias_text'        => 'nullable|string|max:80',
-            'category'          => 'nullable|string|max:60',
-            'song_text'         => 'nullable|string|max:200',
-            'artist_text'       => 'nullable|string|max:120',
-            'tag_ids'           => 'nullable|array|max:3',
-            'tag_ids.*'         => 'string|uuid',
-            'internal_note'     => 'nullable|string',
+            'internal_note' => 'nullable|string',
         ]);
 
-        $tagIds = [];
-        if (!empty($data['tag_ids'])) {
-            $tagIds = $class->tags()->whereIn('id', $data['tag_ids'])->pluck('id')->toArray();
+        if (isset($data['internal_note'])) {
+            $submission->internal_note = $data['internal_note'];
+            $submission->save();
         }
-        unset($data['tag_ids']);
-
-        $submission->fill($data)->save();
-        $submission->tags()->sync($tagIds);
 
         $result = $this->approveAction->execute($request->user(), $submission);
 

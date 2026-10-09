@@ -300,11 +300,20 @@ class ImageRenderer
         if (filter_var($host, FILTER_VALIDATE_IP)) {
             if (!filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) return null;
         }
-        static $allowedApex    = ['audius.co', 'audius.prod', 'audius.foundation'];
-        static $allowedPattern = '/\.audius\.(co|prod|foundation)$/';
+        // Allowlist: only known music CDN apex domains for artwork
+        static $allowedApex = [
+            // Audius
+            'audius.co', 'audius.prod', 'audius.foundation',
+            // Spotify
+            'scdn.co',
+            // Apple Music / iTunes
+            'mzstatic.com',
+            // YouTube / YT Music
+            'ytimg.com', 'ggpht.com', 'googleusercontent.com',
+        ];
         $parts = explode('.', $host);
         $apex  = count($parts) >= 2 ? implode('.', array_slice($parts, -2)) : $host;
-        if (!in_array($apex, $allowedApex, true) && !preg_match($allowedPattern, $host)) return null;
+        if (!in_array($apex, $allowedApex, true)) return null;
         try {
             $ctx   = stream_context_create(['http' => ['timeout' => 5, 'max_redirects' => 2]]);
             $bytes = @file_get_contents($artworkUrl, false, $ctx, 0, 2 * 1024 * 1024);
@@ -418,6 +427,13 @@ class ImageRenderer
         $w      = $dim['width'];
         $h      = $dim['height'];
 
+        // M10: guard against OOM — 4 bytes/px * 3 (src + canvas + headroom)
+        $requiredBytes = $w * $h * 4 * 3;
+        $availableBytes = (int) ini_get('memory_limit') * 1024 * 1024 - memory_get_usage(true);
+        if ($requiredBytes > $availableBytes) {
+            throw new \RuntimeException("Insufficient memory to render {$w}×{$h} image.");
+        }
+
         $canvas = imagecreatetruecolor($w, $h);
         imagealphablending($canvas, true);
         imagesavealpha($canvas, true);
@@ -478,8 +494,12 @@ class ImageRenderer
         $dim    = $format->dimensions();
         $pw     = 540;
         $ph     = (int) round($pw * $dim['height'] / $dim['width']);
-        $prev   = imagescale($img, $pw, $ph, IMG_BICUBIC);
+        $prev = imagescale($img, $pw, $ph, IMG_BICUBIC);
         imagedestroy($img);
+        if ($prev === false) {
+            // fallback: re-render at full size
+            $prev = $this->render($config);
+        }
         ob_start();
         imagepng($prev);
         $data = ob_get_clean();
@@ -496,7 +516,7 @@ class ImageRenderer
         $design = $config['design'] ?? [];
 
         if (($design['source'] ?? 'builtin') === 'custom' && !empty($design['class_design_id'])) {
-            $this->drawCustomBackground($canvas, $w, $h, $design);
+            $this->drawCustomBackground($canvas, $w, $h, $design, $config['format'] ?? 'story');
             return;
         }
 
@@ -505,7 +525,7 @@ class ImageRenderer
         imagefilledrectangle($canvas, 0, 0, $w - 1, $h - 1, imagecolorallocate($canvas, $r, $g, $b));
     }
 
-    private function drawCustomBackground(\GdImage $canvas, int $w, int $h, array $design): void
+    private function drawCustomBackground(\GdImage $canvas, int $w, int $h, array $design, string $formatStr = 'story'): void
     {
         $classDesign = ClassDesign::find($design['class_design_id']);
         if (!$classDesign) {
@@ -513,7 +533,8 @@ class ImageRenderer
             return;
         }
 
-        $format = DesignFormat::from($design['format'] ?? 'story');
+        // H7: format comes from top-level config, not design sub-array
+        $format = DesignFormat::from($formatStr);
         if ($format === DesignFormat::FeedPortrait && $classDesign->format === DesignFormat::Story && $classDesign->feed_fallback_crop) {
             $crop = $classDesign->feed_fallback_crop;
         } else {

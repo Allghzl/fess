@@ -23,29 +23,17 @@ function detectPii(text: string): string[] {
 export default function SubmissionShow({
     class: cls,
     submission,
-    class_tags = [],
 }: {
     class: ClassWorkspace;
     submission: Submission;
-    class_tags?: Tag[];
+    class_tags?: Tag[]; // kept in props for compat, not used for editing
 }) {
-    const editForm = useForm({
-        target_text: submission.target_text ?? "",
-        alias_text: submission.alias_text ?? "",
-        category: submission.category ?? "",
-        song_text: submission.song_text ?? "",
-        artist_text: submission.artist_text ?? "",
-        tag_ids: (submission.tags ?? []).map((t) => t.id),
+    // Only internal_note is editable — content fields must not be modified
+    const noteForm = useForm({
         internal_note: submission.internal_note ?? "",
     });
 
     const approveForm = useForm({
-        target_text: submission.target_text ?? "",
-        alias_text: submission.alias_text ?? "",
-        category: submission.category ?? "",
-        song_text: submission.song_text ?? "",
-        artist_text: submission.artist_text ?? "",
-        tag_ids: (submission.tags ?? []).map((t) => t.id),
         internal_note: submission.internal_note ?? "",
     });
 
@@ -64,20 +52,10 @@ export default function SubmissionShow({
     const fieldClass =
         "w-full rounded-[10px] border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-ink)] placeholder:text-[var(--color-ink-subtle)] px-3.5 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)]";
 
-    function syncField(field: string, value: string) {
-        editForm.setData(field as never, value as never);
-        approveForm.setData(field as never, value as never);
-    }
-
-    function toggleTag(id: string) {
-        const prev = editForm.data.tag_ids;
-        const next = prev.includes(id)
-            ? prev.filter((t) => t !== id)
-            : prev.length < 3
-              ? [...prev, id]
-              : prev;
-        editForm.setData("tag_ids", next);
-        approveForm.setData("tag_ids", next);
+    function syncNote(value: string) {
+        noteForm.setData("internal_note", value);
+        approveForm.setData("internal_note", value);
+        rejectForm.setData("internal_note", value);
     }
 
     return (
@@ -93,7 +71,7 @@ export default function SubmissionShow({
             <div className="grid gap-8 lg:grid-cols-3">
                 {/* Main */}
                 <div className="lg:col-span-2 space-y-8">
-                    {/* Original message — read only, no metadata clutter */}
+                    {/* Original message — read only */}
                     <div>
                         <SectionTitle>Pesan Asli</SectionTitle>
                         <p className="mt-3 text-sm text-[var(--color-ink)] whitespace-pre-wrap leading-relaxed">
@@ -132,17 +110,41 @@ export default function SubmissionShow({
                                 )}
                             </p>
                         )}
-                        {submission.internal_note && (
-                            <div className="mt-3 px-3 py-2 rounded-[8px] bg-[var(--color-surface-raised)] border border-[var(--color-border)]">
-                                <p className="text-[10px] text-[var(--color-ink-subtle)] uppercase tracking-wide mb-1">
-                                    Catatan dari pengirim
-                                </p>
-                                <p className="text-xs text-[var(--color-ink-muted)]">
-                                    {submission.internal_note}
-                                </p>
+                    </div>
+
+                    {/* Read-only metadata */}
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                        {submission.target_text && (
+                            <div>
+                                <p className="text-[10px] uppercase tracking-wide text-[var(--color-ink-subtle)] mb-1">Untuk</p>
+                                <p className="text-[var(--color-ink)]">{submission.target_text}</p>
+                            </div>
+                        )}
+                        {submission.alias_text && (
+                            <div>
+                                <p className="text-[10px] uppercase tracking-wide text-[var(--color-ink-subtle)] mb-1">Dari</p>
+                                <p className="text-[var(--color-ink)]">{submission.alias_text}</p>
+                            </div>
+                        )}
+                        {submission.category && (
+                            <div>
+                                <p className="text-[10px] uppercase tracking-wide text-[var(--color-ink-subtle)] mb-1">Kategori</p>
+                                <p className="text-[var(--color-ink)]">{submission.category}</p>
                             </div>
                         )}
                     </div>
+
+                    {/* Catatan dari pengirim (internal_note) — read-only display */}
+                    {submission.internal_note && (
+                        <div className="px-3 py-2 rounded-[8px] bg-[var(--color-surface-raised)] border border-[var(--color-border)]">
+                            <p className="text-[10px] text-[var(--color-ink-subtle)] uppercase tracking-wide mb-1">
+                                Catatan dari pengirim
+                            </p>
+                            <p className="text-xs text-[var(--color-ink-muted)]">
+                                {submission.internal_note}
+                            </p>
+                        </div>
+                    )}
 
                     {/* PII warning */}
                     {piiWarnings.length > 0 && (
@@ -152,123 +154,26 @@ export default function SubmissionShow({
                         </Alert>
                     )}
 
-                    {/* Moderation fields */}
+                    {/* Catatan internal admin */}
                     <div className="pt-6 border-t border-[var(--color-border)] space-y-4">
-                        <div className="grid grid-cols-2 gap-3">
-                            <Field label="Untuk">
-                                <input
-                                    type="text"
-                                    className={fieldClass}
-                                    value={editForm.data.target_text}
-                                    onChange={(e) =>
-                                        syncField("target_text", e.target.value)
-                                    }
-                                />
-                            </Field>
-                            <Field label="Dari">
-                                <input
-                                    type="text"
-                                    className={fieldClass}
-                                    value={editForm.data.alias_text}
-                                    onChange={(e) =>
-                                        syncField("alias_text", e.target.value)
-                                    }
-                                />
-                            </Field>
-                        </div>
-
-                        <Field label="Kategori">
-                            <input
-                                type="text"
-                                className={fieldClass}
-                                value={editForm.data.category}
-                                onChange={(e) =>
-                                    syncField("category", e.target.value)
-                                }
-                            />
-                        </Field>
-
-                        {/* Music */}
-                        <div className="grid grid-cols-2 gap-3">
-                            <Field label="Judul Lagu" hint="Opsional">
-                                <input
-                                    type="text"
-                                    className={fieldClass}
-                                    value={editForm.data.song_text}
-                                    onChange={(e) =>
-                                        syncField("song_text", e.target.value)
-                                    }
-                                    maxLength={200}
-                                />
-                            </Field>
-                            <Field label="Artis" hint="Opsional">
-                                <input
-                                    type="text"
-                                    className={fieldClass}
-                                    value={editForm.data.artist_text}
-                                    onChange={(e) =>
-                                        syncField("artist_text", e.target.value)
-                                    }
-                                    maxLength={120}
-                                />
-                            </Field>
-                        </div>
-
-                        {/* Tags */}
-                        {class_tags.length > 0 && (
-                            <Field label="Tag" hint="Maks. 3">
-                                <div className="flex flex-wrap gap-2 mt-1">
-                                    {class_tags.map((tag) => {
-                                        const sel =
-                                            editForm.data.tag_ids.includes(
-                                                tag.id,
-                                            );
-                                        return (
-                                            <button
-                                                key={tag.id}
-                                                type="button"
-                                                onClick={() =>
-                                                    toggleTag(tag.id)
-                                                }
-                                                className={`px-3 py-1 rounded-full text-xs border transition-colors ${
-                                                    sel
-                                                        ? "bg-[var(--color-accent)] text-[#0B0D0E] border-[var(--color-accent)] font-medium"
-                                                        : "bg-transparent text-[var(--color-ink-muted)] border-[var(--color-border)] hover:border-[var(--color-border-strong)]"
-                                                }`}
-                                            >
-                                                #{tag.name}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </Field>
-                        )}
-
-                        <Field label="Catatan Internal">
+                        <Field label="Catatan Internal Admin">
                             <Textarea
                                 rows={2}
-                                value={editForm.data.internal_note}
-                                onChange={(e) => {
-                                    syncField("internal_note", e.target.value);
-                                    rejectForm.setData(
-                                        "internal_note",
-                                        e.target.value,
-                                    );
-                                }}
+                                value={noteForm.data.internal_note}
+                                onChange={(e) => syncNote(e.target.value)}
                             />
                         </Field>
-
                         <Button
                             variant="secondary"
                             size="sm"
                             onClick={() =>
-                                editForm.patch(
+                                noteForm.patch(
                                     `/admin/classes/${cls.id}/submissions/${submission.id}`,
                                 )
                             }
-                            loading={editForm.processing}
+                            loading={noteForm.processing}
                         >
-                            Simpan Draft
+                            Simpan Catatan
                         </Button>
                     </div>
 
