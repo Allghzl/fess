@@ -96,6 +96,35 @@ class ApprovedController extends Controller
         return back();
     }
 
+    /**
+     * Bulk mark submissions as posted (or unposted).
+     *
+     * Sets posted_at = now() on all given IDs that belong to this class
+     * and have approved status. Pass posted=false to clear posted_at.
+     *
+     * @summary Bulk Mark Posted
+     * @tags Approved Posts
+     */
+    public function bulkMarkPosted(Request $request, ClassWorkspace $class)
+    {
+        $this->authorize('update', $class);
+
+        $data = $request->validate([
+            'ids'    => 'required|array|min:1|max:200',
+            'ids.*'  => 'string|uuid',
+            'posted' => 'boolean',
+        ]);
+
+        $markPosted = $data['posted'] ?? true;
+
+        $updated = $class->submissions()
+            ->whereIn('id', $data['ids'])
+            ->where('status', SubmissionStatus::Approved->value)
+            ->update(['posted_at' => $markPosted ? now() : null]);
+
+        return back()->with('success', $updated . ' item ditandai ' . ($markPosted ? 'sudah' : 'belum') . ' diposting.');
+    }
+
     public function bulkRender(Request $request, ClassWorkspace $class)
     {
         $this->authorize('view', $class);

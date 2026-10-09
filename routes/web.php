@@ -112,6 +112,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         Route::prefix('approved')->name('approved.')->group(function () {
             Route::get('/',                           [ApprovedController::class, 'index'])->name('index');
             Route::post('/bulk-render',               [RenderController::class, 'bulkRender'])->name('bulk-render');
+            Route::post('/bulk-mark-posted',          [ApprovedController::class, 'bulkMarkPosted'])->name('bulk-mark-posted');
             Route::get('/{submission}',               [ApprovedController::class, 'show'])->name('show');
             Route::post('/{submission}/mark-posted',  [ApprovedController::class, 'markPosted'])->name('mark-posted');
             Route::post('/{submission}/render',       [RenderController::class, 'render'])->name('render');

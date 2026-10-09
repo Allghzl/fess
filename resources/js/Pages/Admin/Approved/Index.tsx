@@ -1,7 +1,7 @@
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Alert, Button, EmptyState, PageHeader, Select, Tabs } from '@/components/ui';
 import { ClassDesign, ClassWorkspace, RenderFormat, Submission } from '@/types';
-import { Link, router } from '@inertiajs/react';
+import { Link, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 
 interface Paginated<T> {
@@ -43,6 +43,8 @@ export default function ApprovedIndex({
     const [overrides, setOverrides]         = useState<Record<string, string>>({});
     const [bulkLoading, setBulkLoading]     = useState(false);
     const [bulkError, setBulkError]         = useState<string | null>(null);
+
+    const markPostedForm = useForm<{ ids: string[]; posted: boolean }>({ ids: [], posted: true });
 
     const eligibleIds = submissions.data
         .filter((s) => s.status === 'approved')
@@ -253,6 +255,20 @@ export default function ApprovedIndex({
                     <span className="text-sm font-medium text-[var(--color-ink)]">{selected.size} dipilih</span>
                     <Button variant="primary" size="sm" onClick={() => setShowBulk(true)}>
                         Buat Gambar
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        size="sm"
+                        loading={markPostedForm.processing}
+                        onClick={() => {
+                            markPostedForm.setData('ids', Array.from(selected));
+                            markPostedForm.setData('posted', true);
+                            markPostedForm.post(`/admin/classes/${cls.id}/approved/bulk-mark-posted`, {
+                                onSuccess: () => setSelected(new Set()),
+                            });
+                        }}
+                    >
+                        Tandai Sudah Diposting
                     </Button>
                     <Button variant="ghost" size="sm" onClick={() => setSelected(new Set())} className="ml-auto">
                         Batalkan
